@@ -108,3 +108,5 @@ env/
 # Local database files
 *.db
 *.sqlite
+
+phase*.txt
