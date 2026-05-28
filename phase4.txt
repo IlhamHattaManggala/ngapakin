@@ -1,0 +1,76 @@
+# PHASE 4 — DATABASE & ORM SYSTEM
+
+Sekarang lanjutkan NgapakIn ke database layer dan ORM seperti Laravel Eloquent.
+
+Fokus:
+
+* database connector
+* query builder
+* ORM
+* migration
+* seeder
+
+Database:
+
+* SQLite
+* MySQL
+
+WAJIB membuat:
+
+1. Database manager
+2. Connection pool sederhana
+3. Query builder
+4. Base model ORM
+5. Migration system
+6. Seeder system
+7. Relationship system
+
+Contoh ORM:
+
+kelas User extends Model
+tabel = "users"
+fillable = ["name", "email"]
+rampung
+
+Query:
+
+users = User.kabeh()
+user = User.golek(1)
+
+User.gawe({
+"name": "Ilham"
+})
+
+Migration:
+
+gawe munggah()
+schema.gawe("users", gawe(tabel)
+tabel.id()
+tabel.string("name")
+tabel.timestamps()
+rampung)
+rampung
+
+gawe mudhun()
+schema.buang("users")
+rampung
+
+CLI:
+
+python ngapakin.py migrate
+python ngapakin.py rollback
+python ngapakin.py make:model User
+python ngapakin.py make:migration create_users_table
+python ngapakin.py db:seed
+
+Tambahkan:
+
+* validation query
+* transaction
+* query logging
+* ORM relationship:
+  hasOne
+  hasMany
+  belongsTo
+
+Buat contoh CRUD app lengkap.

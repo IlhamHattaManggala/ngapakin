@@ -1,0 +1,18 @@
+# Contoh penggunaan kondisi nek-ya-liyane-rampung di NgapakIn
+
+umur = 20
+
+nek umur >= 17 ya
+    tulis "Wis gede"
+liyane
+    tulis "Isih cilik"
+rampung
+
+# Uji coba kondisi lainnya
+umur_anak = 10
+
+nek umur_anak >= 17 ya
+    tulis "Wis gede"
+liyane
+    tulis "Isih cilik"
+rampung

@@ -1,0 +1,77 @@
+# SETUP GITHUB REPOSITORY
+
+Tambahkan dokumentasi GitHub berikut ke README.md:
+
+## Inisialisasi Repository GitHub
+
+Buat repository baru bernama:
+
+ngapakin
+
+Lalu jalankan command berikut:
+
+```bash
+git init
+
+git add README.md
+git add .
+
+git commit -m "first commit"
+
+git branch -M main
+
+git remote add origin https://github.com/IlhamHattaManggala/ngapakin.git
+
+git push -u origin main
+```
+
+Tambahkan juga:
+
+* `.gitignore` khusus Python
+* `LICENSE` MIT
+* badge GitHub README
+* struktur branch:
+
+  * main
+  * development
+* contoh contribution workflow open-source
+
+Tambahkan file:
+.github/workflows/python.yml
+
+Untuk GitHub Actions CI/CD:
+
+* install dependency
+* run unit test
+* run lint
+* verify build
+
+Tambahkan juga dokumentasi:
+
+* cara clone project
+* cara contribution
+* cara pull request
+* cara menjalankan unit test
+* cara membuat issue
+
+Contoh clone:
+
+```bash
+git clone https://github.com/IlhamHattaManggala/ngapakin.git
+cd ngapakin
+```
+
+Contoh menjalankan project:
+
+```bash
+python ngapakin.py run examples/halo.ngpk
+```
+
+Tambahkan struktur open-source project yang profesional seperti:
+
+* CONTRIBUTING.md
+* CODE_OF_CONDUCT.md
+* SECURITY.md
+* CHANGELOG.md
+
+Pastikan repository siap digunakan sebagai project open-source serius di GitHub.

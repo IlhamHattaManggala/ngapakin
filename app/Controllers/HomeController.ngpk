@@ -1,0 +1,15 @@
+# HomeController for Larapak
+
+gawe index(req, res)
+    user = User.golek(1)
+    balekna res.view("index", ["title": "Sugeng Rawuh", "user": user])
+rampung
+
+gawe dashboard(req, res)
+    balekna res.html("<h1>Dashboard Larapak</h1><p>Mung kanggo sing wis login.</p>")
+rampung
+
+gawe api_users(req, res)
+    data = ["status": "bener", "users": ["Ilham", "Hatta", "Manggala"]]
+    balekna res.json(data)
+rampung

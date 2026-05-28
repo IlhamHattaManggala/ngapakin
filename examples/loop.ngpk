@@ -1,0 +1,11 @@
+# Contoh perulangan baleni-saka-nganti-rampung di NgapakIn
+
+tulis "Menghitung maju dari 1 sampai 5:"
+baleni i saka 1 nganti 5
+    tulis i
+rampung
+
+tulis "Menghitung mundur dari 5 sampai 1:"
+baleni j saka 5 nganti 1
+    tulis j
+rampung

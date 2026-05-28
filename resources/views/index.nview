@@ -1,0 +1,19 @@
+@layout "layout.nview"
+
+@section "content"
+    <h1>Sugeng Rawuh ing Larapak! 🏠</h1>
+    <p>Iki kaca utama sing di-render saka file <code>resources/views/index.nview</code>.</p>
+    
+    @nek user
+        <p>Halo, pangguna sing aktif yaiku: <strong>{{ user.name }}</strong></p>
+    @liyane
+        <p>Ora ana pangguna sing mlebu.</p>
+    @rampung
+    
+    <h3>Daftar Angka (Perulangan @baleni):</h3>
+    <ul>
+    @baleni angka saka 1 nganti 5
+        <li>Item Nomor {{ angka }}</li>
+    @rampung
+    </ul>
+@rampung

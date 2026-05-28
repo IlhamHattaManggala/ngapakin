@@ -1,0 +1,65 @@
+# PHASE 2 — BYTECODE & VIRTUAL MACHINE
+
+Sekarang lanjutkan NgapakIn ke Phase 2.
+
+Jangan membuat framework web dulu.
+
+Fokus:
+
+* compiler AST → bytecode
+* virtual machine
+* opcode system
+* stack machine
+* call frame
+* memory scope
+* bytecode execution
+
+Tujuan:
+Membuat runtime lebih serius seperti engine bahasa pemrograman sungguhan.
+
+WAJIB membuat:
+
+1. Bytecode instruction
+2. Opcode enum
+3. Compiler
+4. Stack VM
+5. Frame execution
+6. Function call stack
+7. Scope memory
+8. Bytecode debugger sederhana
+
+Tambahkan:
+
+* disassembler bytecode
+* debug mode
+* execution trace
+
+Contoh CLI:
+
+python ngapakin.py compile halo.ngpk
+python ngapakin.py run halo.ngpk
+python ngapakin.py debug halo.ngpk
+
+Struktur tambahan:
+
+ngapak/
+├── compiler.py
+├── bytecode.py
+├── opcode.py
+├── vm.py
+├── frame.py
+└── debugger.py
+
+Tambahkan dokumentasi:
+
+* cara kerja VM
+* cara kerja stack machine
+* cara compile AST ke bytecode
+* contoh bytecode output
+
+Pastikan architecture siap untuk:
+
+* optimization
+* bytecode cache
+* module system
+* import system

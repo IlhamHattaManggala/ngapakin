@@ -1,0 +1,26 @@
+{
+    "name": "ngapaklang-vscode",
+    "displayName": "NgapakLang Language Support",
+    "description": "Syntax highlighting and diagnostics for NgapakLang (.ngpk) files",
+    "version": "1.0.0",
+    "publisher": "IlhamHattaManggala",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "ngapak",
+            "aliases": ["Ngapak", "ngapak"],
+            "extensions": [".ngpk"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "ngapak",
+            "scopeName": "source.ngpk",
+            "path": "./syntaxes/ngapak.tmLanguage.json"
+        }]
+    }
+}

@@ -1,0 +1,15 @@
+# Contoh penggunaan variabel dan operator di NgapakIn
+
+jeneng = "Ilham"
+umur = 20
+
+tulis "Nama:"
+tulis jeneng
+
+tulis "Umur:"
+tulis umur
+
+# Uji coba operator
+tambah_umur = umur + 5
+tulis "Umur setelah 5 tahun:"
+tulis tambah_umur

@@ -1,0 +1,8 @@
+# Web routes for Larapak
+
+rute.get("/", "HomeController@index")
+
+# Group route with auth middleware
+rute.group(["middleware": "auth"], gawe()
+    rute.get("/dashboard", "HomeController@dashboard")
+rampung)

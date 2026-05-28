@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }} - Larapak MVC</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f4f6f9; color: #333; }
+        header { border-bottom: 2px solid #007bff; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        header a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
+        header a:hover { text-decoration: underline; }
+        main { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; font-size: 0.9em; color: #777; text-align: center; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Larapak Web Framework 🚀</h2>
+        <nav>
+            <a href="/">Utama</a>
+            <a href="/dashboard">Dashboard (Tolak)</a>
+            <a href="/dashboard?login=bener">Dashboard (Mlebu)</a>
+            <a href="/api/users">API</a>
+        </nav>
+    </header>
+    
+    <main>
+        @yield "content"
+    </main>
+
+    <footer>
+        <p>Digawe nganggo Bahasa NgapakIn &copy; 2026 - Hubungan Laravel + Python + VM</p>
+    </footer>
+</body>
+</html>

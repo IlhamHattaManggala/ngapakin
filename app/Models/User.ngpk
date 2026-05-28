@@ -1,0 +1,6 @@
+# Model User untuk Larapak
+
+kelas User extends Model
+    tabel = "users"
+    fillable = ["name", "email"]
+rampung

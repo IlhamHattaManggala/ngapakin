@@ -1,0 +1,14 @@
+# Migrasi: create_users_table
+
+gawe munggah()
+    schema.gawe("users", gawe(tabel)
+        tabel.id()
+        tabel.string("name")
+        tabel.string("email")
+        tabel.timestamps()
+    rampung)
+rampung
+
+gawe mudhun()
+    schema.buang("users")
+rampung

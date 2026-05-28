@@ -1,0 +1,16 @@
+# Contoh deklarasi dan pemanggilan fungsi di NgapakIn
+
+gawe tambah(a, b)
+    balekna a + b
+rampung
+
+hasil = tambah(10, 5)
+tulis "Hasil 10 + 5:"
+tulis hasil
+
+# Fungsi tanpa return (mengembalikan kosong)
+gawe sapa(nama)
+    tulis "Halo " + nama
+rampung
+
+sapa("Ilham")

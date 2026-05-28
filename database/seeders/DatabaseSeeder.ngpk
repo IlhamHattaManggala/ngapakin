@@ -1,0 +1,5 @@
+# DatabaseSeeder untuk Larapak
+
+User.gawe(["name": "Ilham Hatta Manggala", "email": "ilham@example.com"])
+User.gawe(["name": "Tio", "email": "tio@example.com"])
+tulis "Seeding sukses!"

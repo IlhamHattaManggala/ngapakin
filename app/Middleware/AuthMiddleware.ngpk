@@ -1,0 +1,10 @@
+# AuthMiddleware for Larapak
+
+gawe tangani(req, res, lanjut)
+    # Pengecekan otentikasi simulasi lewat parameter URL: ?login=bener
+    nek req.get("login") == "bener" ya
+        balekna lanjut(req, res)
+    liyane
+        balekna res.html("<h1>Akses Ditolak!</h1><p>Sampeyan kudu login dhisik. Tambahaken <strong>?login=bener</strong> ing URL.</p>", 401)
+    rampung
+rampung
