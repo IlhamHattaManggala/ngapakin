@@ -2,13 +2,18 @@
 
 import os
 import sqlite3
+from .env import env
 
 class DatabaseConnection:
     def __init__(self, db_path="database.sqlite"):
         self.db_path = db_path
         self._conn = None
         self.query_log = []
-        self.log_queries = True
+        log_setting = env("DB_LOG_QUERIES", False)
+        if isinstance(log_setting, bool):
+            self.log_queries = log_setting
+        else:
+            self.log_queries = str(log_setting).lower() in ("bener", "true", "1")
 
     def get_connection(self):
         if self._conn is None:
@@ -22,9 +27,9 @@ class DatabaseConnection:
 
     def execute(self, sql, params=None):
         params = params or []
+        self.query_log.append((sql, params))
         if self.log_queries:
             print(f"[SQL] {sql} | Params: {params}")
-            self.query_log.append((sql, params))
         
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -51,8 +56,6 @@ class DatabaseConnection:
         if self._conn:
             self._conn.close()
             self._conn = None
-
-from .env import env
 
 # Global db connection
 db_manager = DatabaseConnection(env("DB_DATABASE", "database.sqlite"))
