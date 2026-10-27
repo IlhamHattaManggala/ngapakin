@@ -111,5 +111,6 @@ env/
 
 # Environment variables
 .env
+.pypirc
 
 phase*.txt
