@@ -1,34 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} - Larapak MVC</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f4f6f9; color: #333; }
-        header { border-bottom: 2px solid #007bff; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        header a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
-        header a:hover { text-decoration: underline; }
-        main { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; font-size: 0.9em; color: #777; text-align: center; }
-    </style>
 </head>
 <body>
-    <header>
-        <h2>Larapak Web Framework 🚀</h2>
-        <nav>
-            <a href="/">Utama</a>
-            <a href="/dashboard">Dashboard (Tolak)</a>
-            <a href="/dashboard?login=bener">Dashboard (Mlebu)</a>
-            <a href="/api/users">API</a>
-        </nav>
-    </header>
-    
-    <main>
-        @yield "content"
-    </main>
+    <div class="ambient-glow"></div>
 
-    <footer>
-        <p>Digawe nganggo Bahasa NgapakIn &copy; 2026 - Hubungan Laravel + Python + VM</p>
-    </footer>
+    <div class="layout-wrapper">
+        <header class="nav-island">
+            <a href="/" class="brand-group">
+                <img src="/images/logo.png" alt="NgapakIn Logo" class="brand-icon">
+                <span class="brand-title">{{ title }}</span>
+                <span class="badge-version">v1.0.2</span>
+            </a>
+
+            <nav class="nav-links">
+                <a href="/" class="nav-item">Utama</a>
+                <a href="/api/status" class="nav-item">API Status</a>
+                <a href="https://ilhamhattamanggala.my.id" target="_blank" class="nav-item highlight">Portofolio</a>
+                <div class="nav-status">
+                    <span class="status-dot"></span>
+                    <span>Server Aktif</span>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            @yield "content"
+        </main>
+
+        <footer>
+            <p>Digawe dening <strong>Ilham Hatta Manggala</strong> &bull; Dialek NgapakIn &amp; Larapak MVC &copy; 2026</p>
+            <p>
+                <a href="mailto:ilhamhattamanggala123@gmail.com" class="footer-link">ilhamhattamanggala123@gmail.com</a>
+                &bull;
+                <a href="https://ilhamhattamanggala.my.id" target="_blank" rel="noopener noreferrer" class="footer-link">ilhamhattamanggala.my.id</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function copyCommand(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.innerText;
+                btn.innerText = 'Kasil Disalin!';
+                btn.style.color = '#34d399';
+                setTimeout(() => {
+                    btn.innerText = original;
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html>

@@ -331,8 +331,7 @@ rampung)
     home_controller = f"""# HomeController for {project_name}
 
 gawe index(req, res)
-    fitur = ["Routing Cepet", "ActiveRecord ORM", "Blade-like Template", "Sesi & Cache SQLite"]
-    balekna res.view("index", ["title": "{project_name}", "fitur": fitur])
+    balekna res.view("index", ["title": "{project_name}"])
 rampung
 """
     with open(os.path.join(target_dir, "app/Controllers/HomeController.ngpk"), "w", encoding="utf-8") as f:
@@ -340,30 +339,64 @@ rampung
 
     # 4. resources/views/layout.nview
     layout_view = """<!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>{{ title }} - Larapak Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Larapak MVC</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <a href="/" class="logo">🚀 {{ title }}</a>
-            <nav>
-                <a href="/">Utama</a>
-                <a href="/api/status">API Status</a>
+    <div class="ambient-glow"></div>
+
+    <div class="layout-wrapper">
+        <header class="nav-island">
+            <a href="/" class="brand-group">
+                <img src="/images/logo.png" alt="NgapakIn Logo" class="brand-icon">
+                <span class="brand-title">{{ title }}</span>
+                <span class="badge-version">v1.0.2</span>
+            </a>
+
+            <nav class="nav-links">
+                <a href="/" class="nav-item">Utama</a>
+                <a href="/api/status" class="nav-item">API Status</a>
+                <a href="https://ilhamhattamanggala.my.id" target="_blank" class="nav-item highlight">Portofolio</a>
+                <div class="nav-status">
+                    <span class="status-dot"></span>
+                    <span>Server Aktif</span>
+                </div>
             </nav>
         </header>
 
-        <main class="card">
+        <main>
             @yield "content"
         </main>
 
         <footer>
-            <p>Digawe nganggo dialek NgapakIn &copy; 2026</p>
+            <p>Digawe dening <strong>Ilham Hatta Manggala</strong> &bull; Dialek NgapakIn &amp; Larapak MVC &copy; 2026</p>
+            <p>
+                <a href="mailto:ilhamhattamanggala123@gmail.com" class="footer-link">ilhamhattamanggala123@gmail.com</a>
+                &bull;
+                <a href="https://ilhamhattamanggala.my.id" target="_blank" rel="noopener noreferrer" class="footer-link">ilhamhattamanggala.my.id</a>
+            </p>
         </footer>
     </div>
+
+    <script>
+        function copyCommand(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.innerText;
+                btn.innerText = 'Kasil Disalin!';
+                btn.style.color = '#34d399';
+                setTimeout(() => {
+                    btn.innerText = original;
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html>
 """
@@ -374,63 +407,176 @@ rampung
     index_view = """@layout "layout.nview"
 
 @section "content"
-    <h1>Sugeng Rawuh ing {{ title }}! 🏠</h1>
-    <p>Proyek anyar iki siap dikembangna nganggo sintaks NgapakIn lan arsitektur Larapak MVC.</p>
+    <section class="hero-section">
+        <div class="eyebrow-pill">Larapak MVC Engine &bull; NgapakIn</div>
+        <h1 class="hero-title">Sugeng Rawuh ing <span class="highlight">{{ title }}</span></h1>
+        <p class="hero-subtitle">
+            Aplikasi web anyar siap dikembangna kanthi arsitektur Larapak MVC sing modern, enteng, lan cepet.
+        </p>
 
-    <h3>Fitur Utama:</h3>
-    <ul>
-    @baleni f neng fitur
-        <li>✨ {{ f }}</li>
-    @rampung
-    </ul>
+        <div class="hero-actions">
+            <a href="/api/status" class="btn-primary">
+                <span>Priksa Status API</span>
+                <span>&rarr;</span>
+            </a>
+            <a href="https://ilhamhattamanggala.my.id" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+                <span>Portofolio Pengembang</span>
+                <span>&nearr;</span>
+            </a>
+        </div>
+
+        <div class="terminal-card">
+            <div class="terminal-inner">
+                <div class="terminal-prompt">
+                    <span class="terminal-dollar">$</span>
+                    <span>ngapakin serve 8000</span>
+                </div>
+                <button type="button" class="btn-copy" onclick="copyCommand('ngapakin serve 8000', this)">Salin</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="bento-grid">
+        <div class="bento-card col-8">
+            <div class="bento-inner">
+                <div class="card-header-badge">Arsitektur Inti</div>
+                <h3 class="card-title">Routing Deklaratif &amp; Middleware</h3>
+                <p class="card-description">
+                    Pengorganisasian rute web lan API kanthi otomatis mawa injeksi middleware pipeline terpadu ing <code>routes/web.ngpk</code>.
+                </p>
+                <span class="card-code-tag">routes/web.ngpk</span>
+            </div>
+        </div>
+
+        <div class="bento-card col-4">
+            <div class="bento-inner">
+                <div class="card-header-badge">Database &amp; ORM</div>
+                <h3 class="card-title">ActiveRecord Fluent</h3>
+                <p class="card-description">
+                    Akses data SQLite kanthi model berbasis kelas lan skema migrasi otomatis.
+                </p>
+                <span class="card-code-tag">app/Models/</span>
+            </div>
+        </div>
+
+        <div class="bento-card col-4">
+            <div class="bento-inner">
+                <div class="card-header-badge">Antarmuka</div>
+                <h3 class="card-title">Blade-like Template</h3>
+                <p class="card-description">
+                    Pewarisan layout master, sekat tampilan dinamis, proteksi CSRF, lan auto-escaping.
+                </p>
+                <span class="card-code-tag">resources/views/</span>
+            </div>
+        </div>
+
+        <div class="bento-card col-8">
+            <div class="bento-inner">
+                <div class="card-header-badge">Layanan Latar Belakang</div>
+                <h3 class="card-title">Sesi, Cache TTL, &amp; Antrean Queue</h3>
+                <p class="card-description">
+                    Penyimpanan sesi aman, caching memori/database, lan eksekusi background worker kanthi <code>ngapakin queue:work</code>.
+                </p>
+                <span class="card-code-tag">app/Jobs/</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="spec-bar">
+        <div class="spec-item">
+            <span class="spec-label">Bahasa Sumber</span>
+            <span class="spec-value">NgapakIn (.ngpk)</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">Framework Engine</span>
+            <span class="spec-value">Larapak MVC v1.0.2</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">Eksekutor</span>
+            <span class="spec-value">Stack-based VM</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">Pangripta</span>
+            <span class="spec-value">Ilham Hatta Manggala</span>
+        </div>
+    </div>
 @rampung
 """
     with open(os.path.join(target_dir, "resources/views/index.nview"), "w", encoding="utf-8") as f:
         f.write(index_view)
 
-    # 6. public/css/style.css
+    # 6. public/ assets (CSS, images, favicon)
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(os.path.join(target_dir, "public/images"), exist_ok=True)
+    os.makedirs(os.path.join(target_dir, "public/css"), exist_ok=True)
+    
+    import shutil
+    for rel_path in ["images/logo.png", "favicon.png", "favicon.ico", "css/style.css"]:
+        src = os.path.join(script_dir, "public", rel_path)
+        dst = os.path.join(target_dir, "public", rel_path)
+        if os.path.exists(src):
+            try:
+                shutil.copy2(src, dst)
+            except Exception:
+                pass
+
     current_css = os.path.join(script_dir, "public/css/style.css")
     if os.path.exists(current_css):
         with open(current_css, "r", encoding="utf-8") as f:
             css_content = f.read()
     else:
-        css_content = """/* Larapak Default Modern Stylesheet */
+        css_content = """@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --bg-page: #f8fafc;
-  --bg-surface: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 8px;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --bg-base: #06080d; --bg-surface: #0d121c; --bg-surface-elevated: #131a27;
+  --border-subtle: rgba(255,255,255,0.07); --border-highlight: rgba(255,255,255,0.14);
+  --accent-primary: #f58220; --accent-hover: #e65100; --accent-glow: rgba(245,130,32,0.15); --accent-cream: #f4e8d3;
+  --text-primary: #f8fafc; --text-secondary: #94a3b8; --text-muted: #64748b; --text-accent: #fb923c;
+  --radius-outer: 24px; --radius-inner: 18px; --radius-pill: 9999px;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif; --font-mono: 'JetBrains Mono', monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page: #0b0f19;
-    --bg-surface: #111827;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: #1f2937;
-  }
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); background-color: var(--bg-page); color: var(--text-main); line-height: 1.6; padding: 2rem 1rem; }
-.container { max-width: 900px; margin: 0 auto; }
-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; }
-.logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); text-decoration: none; }
-.card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
-h1, h2, h3 { color: var(--text-main); margin-bottom: 0.75rem; font-weight: 600; }
-p { color: var(--text-muted); margin-bottom: 1rem; }
-code { background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
-.btn { display: inline-block; background: var(--primary); color: #ffffff; padding: 0.6rem 1.2rem; border-radius: var(--radius); text-decoration: none; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.15s ease; }
-.btn:hover { background: var(--primary-hover); }
-ul { list-style-type: none; padding-left: 0; }
-li { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
-li:last-child { border-bottom: none; }
-.error { color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem; display: block; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--bg-base); color: var(--text-primary); line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+.ambient-glow { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 1000px; height: 480px; background: radial-gradient(ellipse 60% 40% at 50% 0%, var(--accent-glow), transparent 70%); pointer-events: none; }
+.layout-wrapper { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; display: flex; flex-direction: column; min-height: 100vh; }
+.nav-island { display: flex; align-items: center; justify-content: space-between; background: rgba(13,18,28,0.75); backdrop-filter: blur(16px); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); padding: 0.6rem 1.25rem; margin-bottom: 3.5rem; }
+.brand-group { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+.brand-icon { width: 32px; height: 32px; object-fit: contain; }
+.brand-title { font-weight: 700; font-size: 1.05rem; }
+.badge-version { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-pill); background: rgba(245,130,32,0.12); color: var(--text-accent); border: 1px solid rgba(245,130,32,0.25); }
+.nav-links { display: flex; align-items: center; gap: 0.5rem; }
+.nav-item { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 0.4rem 0.85rem; border-radius: var(--radius-pill); }
+.nav-item:hover { color: var(--text-primary); background: var(--bg-surface-elevated); }
+.nav-item.highlight { color: var(--accent-cream); background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); }
+.nav-status { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; font-weight: 500; color: #34d399; padding-left: 0.75rem; border-left: 1px solid var(--border-subtle); }
+.status-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
+.hero-section { text-align: center; max-width: 760px; margin: 0 auto 3.5rem; }
+.eyebrow-pill { display: inline-flex; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-accent); background: rgba(245,130,32,0.08); border: 1px solid rgba(245,130,32,0.22); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem; margin-bottom: 1.5rem; }
+.hero-title { font-size: 2.85rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1.15; margin-bottom: 1.25rem; }
+.hero-title .highlight { background: linear-gradient(135deg, #fff 30%, var(--accent-cream) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero-subtitle { font-size: 1.1rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 2rem; }
+.hero-actions { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+.btn-primary { display: inline-flex; align-items: center; gap: 0.75rem; background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%); color: #fff; font-size: 0.92rem; font-weight: 600; padding: 0.65rem 1.35rem; border-radius: var(--radius-pill); text-decoration: none; box-shadow: 0 4px 16px rgba(245,130,32,0.3); border: none; }
+.btn-secondary { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--bg-surface); color: var(--text-primary); font-size: 0.92rem; font-weight: 500; padding: 0.65rem 1.35rem; border-radius: var(--radius-pill); text-decoration: none; border: 1px solid var(--border-subtle); }
+.terminal-card { max-width: 600px; margin: 0 auto; background: rgba(13,18,28,0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 0.35rem; }
+.terminal-inner { display: flex; align-items: center; justify-content: space-between; background: var(--bg-base); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-inner); padding: 0.85rem 1.25rem; font-family: var(--font-mono); font-size: 0.9rem; }
+.terminal-prompt { display: flex; align-items: center; gap: 0.75rem; }
+.terminal-dollar { color: var(--accent-primary); }
+.btn-copy { background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: var(--radius-pill); cursor: pointer; }
+.bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; margin-bottom: 3.5rem; }
+.bento-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 0.4rem; }
+.bento-inner { background: var(--bg-surface-elevated); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--radius-inner); padding: 1.75rem; height: 100%; display: flex; flex-direction: column; }
+.col-8 { grid-column: span 8; } .col-4 { grid-column: span 4; }
+.card-header-badge { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+.card-title { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem; }
+.card-description { font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 1.25rem; flex-grow: 1; }
+.card-code-tag { display: inline-block; align-self: flex-start; font-family: var(--font-mono); font-size: 0.78rem; background: rgba(0,0,0,0.3); color: var(--accent-cream); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid var(--border-subtle); }
+.spec-bar { display: flex; align-items: center; justify-content: space-around; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 1.25rem 2rem; margin-bottom: 3.5rem; flex-wrap: wrap; gap: 1.5rem; }
+.spec-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.spec-label { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
+.spec-value { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+footer { margin-top: auto; border-top: 1px solid var(--border-subtle); padding-top: 2rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap; gap: 1rem; }
+.footer-link { color: var(--text-accent); text-decoration: none; font-weight: 500; }
+@media (max-width: 860px) { .hero-title { font-size: 2.2rem; } .col-8, .col-4 { grid-column: span 12; } .nav-island { flex-direction: column; gap: 1rem; border-radius: var(--radius-outer); } .spec-bar { flex-direction: column; align-items: flex-start; } }
 """
     with open(os.path.join(target_dir, "public/css/style.css"), "w", encoding="utf-8") as f:
         f.write(css_content)

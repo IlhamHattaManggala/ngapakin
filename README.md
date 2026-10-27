@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/images/logo.png" width="160" alt="NgapakIn & Larapak Logo" />
+</p>
+
 # NgapakIn & Larapak MVC
 
 [![PyPI Version](https://img.shields.io/pypi/v/ngapakin.svg)](https://pypi.org/project/ngapakin/)
@@ -249,6 +253,15 @@ ngapakin test
 - **v1.2.0**: Relasi ORM Polimorfik (Many-to-Many dinamis).
 - **v1.3.0**: Enkripsi berkas bytecode `.ngpkc` terkompresi tingkat lanjut.
 - **v2.0.0**: Compiler NgapakIn JIT (Just-In-Time) untuk eksekusi setara kode mesin.
+
+---
+
+## Penulis dan Pengembang
+
+- **Nama**: Ilham Hatta Manggala
+- **Email**: [ilhamhattamanggala123@gmail.com](mailto:ilhamhattamanggala123@gmail.com)
+- **Portofolio**: [ilhamhattamanggala.my.id](https://ilhamhattamanggala.my.id)
+- **GitHub**: [github.com/IlhamHattaManggala](https://github.com/IlhamHattaManggala)
 
 ---
 
