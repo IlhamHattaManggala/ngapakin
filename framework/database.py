@@ -9,7 +9,7 @@ class DatabaseConnection:
         self.db_path = db_path
         self._conn = None
         self.query_log = []
-        log_setting = env("DB_LOG_QUERIES", False)
+        log_setting = env("DB_DEBUG", env("DB_LOG_QUERIES", False))
         if isinstance(log_setting, bool):
             self.log_queries = log_setting
         else:

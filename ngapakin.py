@@ -444,6 +444,7 @@ APP_KEY=secret_{project_name}_key_2026
 
 DB_CONNECTION=sqlite
 DB_DATABASE=database.sqlite
+DB_DEBUG=salah
 """
     with open(os.path.join(target_dir, ".env"), "w", encoding="utf-8") as f:
         f.write(env_content)
@@ -451,7 +452,7 @@ DB_DATABASE=database.sqlite
         f.write(env_content)
 
     # 8. README.md
-    readme_content = f"""# {project_name} 🚀
+    readme_content = f"""# {project_name}
 
 Proyek aplikasi web Larapak sing digawe nganggo bahasa NgapakIn.
 
@@ -469,7 +470,7 @@ Proyek aplikasi web Larapak sing digawe nganggo bahasa NgapakIn.
     with open(os.path.join(target_dir, "README.md"), "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print(f"\n✅ Proyek '{project_name}' kasil digawe kanthi resik tanpa sampah engine!")
+    print(f"\nProyek '{project_name}' kasil digawe kanthi resik tanpa sampah engine!")
     print("\nLangkah sabanjure:")
     print(f"  cd {project_name}")
     print("  ngapakin serve\n")
