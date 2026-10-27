@@ -338,170 +338,36 @@ rampung
         f.write(home_controller)
 
     # 4. resources/views/layout.nview
-    layout_view = """<!DOCTYPE html>
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    layout_src = os.path.join(script_dir, "resources/views/layout.nview")
+    if os.path.exists(layout_src):
+        with open(layout_src, "r", encoding="utf-8") as f:
+            layout_view = f.read()
+    else:
+        layout_view = """<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Larapak MVC</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="shortcut icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/css/style.css">
+    <title>{{ title }} - Larapak</title>
 </head>
 <body>
-    <div class="ambient-glow"></div>
-
-    <div class="layout-wrapper">
-        <header class="nav-island">
-            <a href="/" class="brand-group">
-                <img src="/images/logo.png" alt="NgapakIn Logo" class="brand-icon">
-                <span class="brand-title">{{ title }}</span>
-                <span class="badge-version">v1.0.2</span>
-            </a>
-
-            <nav class="nav-links">
-                <a href="/" class="nav-item">Utama</a>
-                <a href="/api/status" class="nav-item">API Status</a>
-                <a href="https://ilhamhattamanggala.my.id" target="_blank" class="nav-item highlight">Portofolio</a>
-                <div class="nav-status">
-                    <span class="status-dot"></span>
-                    <span>Server Aktif</span>
-                </div>
-            </nav>
-        </header>
-
-        <main>
-            @yield "content"
-        </main>
-
-        <footer>
-            <p>Digawe dening <strong>Ilham Hatta Manggala</strong> &bull; Dialek NgapakIn &amp; Larapak MVC &copy; 2026</p>
-            <p>
-                <a href="mailto:ilhamhattamanggala123@gmail.com" class="footer-link">ilhamhattamanggala123@gmail.com</a>
-                &bull;
-                <a href="https://ilhamhattamanggala.my.id" target="_blank" rel="noopener noreferrer" class="footer-link">ilhamhattamanggala.my.id</a>
-            </p>
-        </footer>
-    </div>
-
-    <script>
-        function copyCommand(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
-                const original = btn.innerText;
-                btn.innerText = 'Kasil Disalin!';
-                btn.style.color = '#34d399';
-                setTimeout(() => {
-                    btn.innerText = original;
-                    btn.style.color = '';
-                }, 2000);
-            });
-        }
-    </script>
+    @yield "content"
 </body>
-</html>
-"""
+</html>"""
     with open(os.path.join(target_dir, "resources/views/layout.nview"), "w", encoding="utf-8") as f:
         f.write(layout_view)
 
     # 5. resources/views/index.nview
-    index_view = """@layout "layout.nview"
-
+    index_src = os.path.join(script_dir, "resources/views/index.nview")
+    if os.path.exists(index_src):
+        with open(index_src, "r", encoding="utf-8") as f:
+            index_view = f.read()
+    else:
+        index_view = """@layout "layout.nview"
 @section "content"
-    <section class="hero-section">
-        <div class="eyebrow-pill">Larapak MVC Engine &bull; NgapakIn</div>
-        <h1 class="hero-title">Sugeng Rawuh ing <span class="highlight">{{ title }}</span></h1>
-        <p class="hero-subtitle">
-            Aplikasi web anyar siap dikembangna kanthi arsitektur Larapak MVC sing modern, enteng, lan cepet.
-        </p>
-
-        <div class="hero-actions">
-            <a href="/api/status" class="btn-primary">
-                <span>Priksa Status API</span>
-                <span>&rarr;</span>
-            </a>
-            <a href="https://ilhamhattamanggala.my.id" target="_blank" rel="noopener noreferrer" class="btn-secondary">
-                <span>Portofolio Pengembang</span>
-                <span>&nearr;</span>
-            </a>
-        </div>
-
-        <div class="terminal-card">
-            <div class="terminal-inner">
-                <div class="terminal-prompt">
-                    <span class="terminal-dollar">$</span>
-                    <span>ngapakin serve 8000</span>
-                </div>
-                <button type="button" class="btn-copy" onclick="copyCommand('ngapakin serve 8000', this)">Salin</button>
-            </div>
-        </div>
-    </section>
-
-    <section class="bento-grid">
-        <div class="bento-card col-8">
-            <div class="bento-inner">
-                <div class="card-header-badge">Arsitektur Inti</div>
-                <h3 class="card-title">Routing Deklaratif &amp; Middleware</h3>
-                <p class="card-description">
-                    Pengorganisasian rute web lan API kanthi otomatis mawa injeksi middleware pipeline terpadu ing <code>routes/web.ngpk</code>.
-                </p>
-                <span class="card-code-tag">routes/web.ngpk</span>
-            </div>
-        </div>
-
-        <div class="bento-card col-4">
-            <div class="bento-inner">
-                <div class="card-header-badge">Database &amp; ORM</div>
-                <h3 class="card-title">ActiveRecord Fluent</h3>
-                <p class="card-description">
-                    Akses data SQLite kanthi model berbasis kelas lan skema migrasi otomatis.
-                </p>
-                <span class="card-code-tag">app/Models/</span>
-            </div>
-        </div>
-
-        <div class="bento-card col-4">
-            <div class="bento-inner">
-                <div class="card-header-badge">Antarmuka</div>
-                <h3 class="card-title">Blade-like Template</h3>
-                <p class="card-description">
-                    Pewarisan layout master, sekat tampilan dinamis, proteksi CSRF, lan auto-escaping.
-                </p>
-                <span class="card-code-tag">resources/views/</span>
-            </div>
-        </div>
-
-        <div class="bento-card col-8">
-            <div class="bento-inner">
-                <div class="card-header-badge">Layanan Latar Belakang</div>
-                <h3 class="card-title">Sesi, Cache TTL, &amp; Antrean Queue</h3>
-                <p class="card-description">
-                    Penyimpanan sesi aman, caching memori/database, lan eksekusi background worker kanthi <code>ngapakin queue:work</code>.
-                </p>
-                <span class="card-code-tag">app/Jobs/</span>
-            </div>
-        </div>
-    </section>
-
-    <div class="spec-bar">
-        <div class="spec-item">
-            <span class="spec-label">Bahasa Sumber</span>
-            <span class="spec-value">NgapakIn (.ngpk)</span>
-        </div>
-        <div class="spec-item">
-            <span class="spec-label">Framework Engine</span>
-            <span class="spec-value">Larapak MVC v1.0.2</span>
-        </div>
-        <div class="spec-item">
-            <span class="spec-label">Eksekutor</span>
-            <span class="spec-value">Stack-based VM</span>
-        </div>
-        <div class="spec-item">
-            <span class="spec-label">Pangripta</span>
-            <span class="spec-value">Ilham Hatta Manggala</span>
-        </div>
-    </div>
-@rampung
-"""
+    <h1>Sugeng Rawuh ing {{ title }}</h1>
+@rampung"""
     with open(os.path.join(target_dir, "resources/views/index.nview"), "w", encoding="utf-8") as f:
         f.write(index_view)
 
