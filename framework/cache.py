@@ -34,7 +34,7 @@ class Cache:
             return default
             
         expiration = row["expiration"]
-        if expiration is not None and expiration < int(time.time()):
+        if expiration is not None and expiration <= time.time():
             # Expired, remove it
             self.lalekna(key)
             return default

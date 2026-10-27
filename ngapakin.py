@@ -22,8 +22,10 @@ def print_usage():
     print("  python ngapakin.py db:seed")
     print("  python ngapakin.py queue:work")
     print("  python ngapakin.py cache:clear")
+    print("  python ngapakin.py new <NamaProject>")
     print("  python ngapakin.py package:install <nama-package>")
     print("  python ngapakin.py repl")
+    print("  python ngapakin.py test")
 
 
 def create_vm(router=None):
@@ -37,6 +39,7 @@ def create_vm(router=None):
     from framework.event import Event
     from framework.auth import Auth
     from framework.queue import Queue
+    from framework.env import env
     
     vm = VM()
     Response.active_vm = vm
@@ -50,6 +53,7 @@ def create_vm(router=None):
     vm.globals["event"] = Event(vm)
     vm.globals["auth"] = Auth(vm)
     vm.globals["queue"] = Queue(vm)
+    vm.globals["env"] = env
     
     # Autoload all models in app/Models/
     models_path = "app/Models"
@@ -122,14 +126,17 @@ def run_migration_file(filepath, action="munggah"):
     else:
         raise ValueError(f"Fungsi '{action}' tidak ditemukan di berkas migrasi '{filepath}'.")
 
-def run_server(port=8000):
+def run_server(port=None):
     from http.server import HTTPServer, BaseHTTPRequestHandler
     import urllib.parse
+    import mimetypes
     from framework.controller import ControllerLoader
     from framework.middleware import MiddlewarePipeline
     from framework.request import Request
     from framework.response import Response
+    from framework.env import env
     
+    port = int(port or env("APP_PORT", 8000))
     router = get_router()
     loader = ControllerLoader(os.path.abspath("app/Controllers"), router.vm)
     pipeline = MiddlewarePipeline(os.path.abspath("app/Middleware"), router.vm)
@@ -141,6 +148,26 @@ def run_server(port=8000):
         def handle_http_request(self, method):
             parsed_url = urllib.parse.urlparse(self.path)
             path = parsed_url.path
+            
+            # Static file serving from public/ directory
+            if method == "GET":
+                public_dir = os.path.abspath("public")
+                clean_path = path.lstrip("/").replace("\\", "/")
+                if clean_path:
+                    candidate_path = os.path.abspath(os.path.join(public_dir, clean_path))
+                    if candidate_path.startswith(public_dir) and os.path.isfile(candidate_path):
+                        mime_type, _ = mimetypes.guess_type(candidate_path)
+                        mime_type = mime_type or "application/octet-stream"
+                        file_size = os.path.getsize(candidate_path)
+                        self.send_response(200)
+                        self.send_header("Content-Type", mime_type)
+                        self.send_header("Content-Length", str(file_size))
+                        self.send_header("Cache-Control", "public, max-age=3600")
+                        self.end_headers()
+                        with open(candidate_path, "rb") as f:
+                            while chunk := f.read(65536):
+                                self.wfile.write(chunk)
+                        return
             
             query = urllib.parse.parse_qs(parsed_url.query)
             query = {k: v[0] if len(v) == 1 else v for k, v in query.items()}
@@ -257,6 +284,160 @@ def run_server(port=8000):
         print("\nLarapak server dihentikan.")
         httpd.server_close()
 
+def create_new_project(project_name):
+    target_dir = os.path.abspath(project_name)
+    if os.path.exists(target_dir) and os.listdir(target_dir):
+        print(f"Error: Direktori '{project_name}' sudah ada dan tidak kosong.")
+        sys.exit(1)
+
+    print(f"🚀 Nggawe proyek Larapak anyar ing folder: '{project_name}'...")
+
+    # Struktur folder aplikasi bersih
+    folders = [
+        "app/Controllers",
+        "app/Models",
+        "app/Middleware",
+        "app/Jobs",
+        "database/migrations",
+        "database/seeders",
+        "public/css",
+        "public/js",
+        "public/images",
+        "resources/views",
+        "routes",
+    ]
+    for folder in folders:
+        os.makedirs(os.path.join(target_dir, folder), exist_ok=True)
+
+    # 1. routes/web.ngpk
+    web_routes = """# Web routes for Larapak
+
+rute.get("/", "HomeController@index")
+"""
+    with open(os.path.join(target_dir, "routes/web.ngpk"), "w", encoding="utf-8") as f:
+        f.write(web_routes)
+
+    # 2. routes/api.ngpk
+    api_routes = """# API routes for Larapak
+
+rute.get("/status", gawe(req, res)
+    balekna res.json(["status": "bener", "app": "Larapak"])
+rampung)
+"""
+    with open(os.path.join(target_dir, "routes/api.ngpk"), "w", encoding="utf-8") as f:
+        f.write(api_routes)
+
+    # 3. app/Controllers/HomeController.ngpk
+    home_controller = f"""# HomeController for {project_name}
+
+gawe index(req, res)
+    fitur = ["Routing Cepet", "ActiveRecord ORM", "Blade-like Template", "Sesi & Cache SQLite"]
+    balekna res.view("index", ["title": "{project_name}", "fitur": fitur])
+rampung
+"""
+    with open(os.path.join(target_dir, "app/Controllers/HomeController.ngpk"), "w", encoding="utf-8") as f:
+        f.write(home_controller)
+
+    # 4. resources/views/layout.nview
+    layout_view = """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }} - Larapak Web</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="logo">🚀 {{ title }}</a>
+            <nav>
+                <a href="/">Utama</a>
+                <a href="/api/status">API Status</a>
+            </nav>
+        </header>
+
+        <main class="card">
+            @yield "content"
+        </main>
+
+        <footer>
+            <p>Digawe nganggo dialek NgapakIn &copy; 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
+"""
+    with open(os.path.join(target_dir, "resources/views/layout.nview"), "w", encoding="utf-8") as f:
+        f.write(layout_view)
+
+    # 5. resources/views/index.nview
+    index_view = """@layout "layout.nview"
+
+@section "content"
+    <h1>Sugeng Rawuh ing {{ title }}! 🏠</h1>
+    <p>Proyek anyar iki siap dikembangna nganggo sintaks NgapakIn lan arsitektur Larapak MVC.</p>
+
+    <h3>Fitur Utama:</h3>
+    <ul>
+    @baleni f neng fitur
+        <li>✨ {{ f }}</li>
+    @rampung
+    </ul>
+@rampung
+"""
+    with open(os.path.join(target_dir, "resources/views/index.nview"), "w", encoding="utf-8") as f:
+        f.write(index_view)
+
+    # 6. public/css/style.css
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    current_css = os.path.join(script_dir, "public/css/style.css")
+    if os.path.exists(current_css):
+        with open(current_css, "r", encoding="utf-8") as f:
+            css_content = f.read()
+    else:
+        css_content = "body { font-family: sans-serif; padding: 2rem; }\n"
+    with open(os.path.join(target_dir, "public/css/style.css"), "w", encoding="utf-8") as f:
+        f.write(css_content)
+
+    # 7. .env and .env.example
+    env_content = f"""APP_NAME={project_name}
+APP_ENV=local
+APP_DEBUG=bener
+APP_PORT=8000
+APP_KEY=secret_{project_name}_key_2026
+
+DB_CONNECTION=sqlite
+DB_DATABASE=database.sqlite
+"""
+    with open(os.path.join(target_dir, ".env"), "w", encoding="utf-8") as f:
+        f.write(env_content)
+    with open(os.path.join(target_dir, ".env.example"), "w", encoding="utf-8") as f:
+        f.write(env_content)
+
+    # 8. README.md
+    readme_content = f"""# {project_name} 🚀
+
+Proyek aplikasi web Larapak sing digawe nganggo bahasa NgapakIn.
+
+## Cara Mlaku
+1. Pindah ing folder proyek:
+   ```bash
+   cd {project_name}
+   ```
+2. Jalankan server lokal:
+   ```bash
+   ngapakin serve 8000
+   ```
+3. Bukak browser ing `http://localhost:8000`.
+"""
+    with open(os.path.join(target_dir, "README.md"), "w", encoding="utf-8") as f:
+        f.write(readme_content)
+
+    print(f"\n✅ Proyek '{project_name}' kasil digawe kanthi resik tanpa sampah engine!")
+    print("\nLangkah sabanjure:")
+    print(f"  cd {project_name}")
+    print("  ngapakin serve\n")
+
 def main():
     if len(sys.argv) < 2:
         print_usage()
@@ -264,7 +445,14 @@ def main():
 
     command = sys.argv[1]
 
-    if command == "compile":
+    if command == "new":
+        if len(sys.argv) < 3:
+            print("Error: Diharapkan nama proyek. Contoh: python ngapakin.py new toko-online")
+            sys.exit(1)
+        project_name = sys.argv[2]
+        create_new_project(project_name)
+
+    elif command == "compile":
         if len(sys.argv) < 3:
             print("Error: Diharapkan path berkas .ngpk")
             sys.exit(1)
@@ -661,6 +849,15 @@ rampung
                 buffer = []
             except EOFError:
                 break
+
+    elif command == "test":
+        import unittest
+        print("\n🚀 Menjalankan seluruh test suite NgapakIn & Larapak...\n")
+        suite = unittest.defaultTestLoader.discover("tests")
+        runner = unittest.TextTestRunner(verbosity=2)
+        result = runner.run(suite)
+        if not result.wasSuccessful():
+            sys.exit(1)
 
     else:
         print(f"Perintah tidak dikenal: '{command}'")

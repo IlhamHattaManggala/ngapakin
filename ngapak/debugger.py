@@ -126,7 +126,12 @@ def disassemble_instruction(chunk, offset):
             OpCode.OP_LTE: "OP_LTE",
             OpCode.OP_GTE: "OP_GTE",
             OpCode.OP_RETURN: "OP_RETURN",
-            OpCode.OP_PRINT: "OP_PRINT"
+            OpCode.OP_PRINT: "OP_PRINT",
+            OpCode.OP_NOT: "OP_NOT",
+            OpCode.OP_AND: "OP_AND",
+            OpCode.OP_OR: "OP_OR",
+            OpCode.OP_GET_INDEX: "OP_GET_INDEX",
+            OpCode.OP_SET_INDEX: "OP_SET_INDEX"
         }
         op_name = simple_ops.get(byte, f"OP_UNKNOWN ({byte})")
         print(f"{offset:04d} {line_str} {op_name}")

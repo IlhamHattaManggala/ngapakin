@@ -10,10 +10,17 @@
         <p>Ora ana pangguna sing mlebu.</p>
     @rampung
     
-    <h3>Daftar Angka (Perulangan @baleni):</h3>
+    <h3>Daftar Angka (Perulangan @baleni saka ... nganti):</h3>
     <ul>
-    @baleni angka saka 1 nganti 5
+    @baleni angka saka 1 nganti 3
         <li>Item Nomor {{ angka }}</li>
+    @rampung
+    </ul>
+
+    <h3>Daftar Pangguna (Perulangan @baleni ... neng):</h3>
+    <ul>
+    @baleni jeneng neng kabeh_user
+        <li>Pangguna: <strong>{{ jeneng }}</strong></li>
     @rampung
     </ul>
 @rampung

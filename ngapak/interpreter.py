@@ -127,6 +127,11 @@ class Interpreter:
             if op_type == T_GTE:
                 return left >= right
 
+        if op_type == T_LAN:
+            return bool(left and right)
+        if op_type == T_UTAWA:
+            return bool(left or right)
+
         raise NgapakRuntimeError(f"Operator tidak dikenal: {node.op.value}", line, col)
 
     def visit_LiteralNode(self, node):
@@ -189,3 +194,43 @@ class Interpreter:
         if node.expr is not None:
             value = self.evaluate(node.expr)
         raise ReturnException(value)
+
+    def visit_UnaryOpNode(self, node):
+        val = self.evaluate(node.expr)
+        if node.op.type == T_ORA:
+            return not self.is_truthy(val)
+        if node.op.type == T_MINUS:
+            return -val
+        return val
+
+    def visit_ForEachNode(self, node):
+        coll = self.evaluate(node.collection_expr)
+        if not isinstance(coll, (list, tuple, dict, str)):
+            raise NgapakRuntimeError("Koleksi untuk loop 'baleni ... neng' harus berupa daftar (list/dict/string)")
+        previous_env = self.environment
+        loop_env = Environment(previous_env)
+        self.environment = loop_env
+        try:
+            for item in coll:
+                loop_env.define(node.var_name, item)
+                for stmt in node.body:
+                    self.execute(stmt)
+        finally:
+            self.environment = previous_env
+        return None
+
+    def visit_IndexAccessNode(self, node):
+        obj = self.evaluate(node.obj)
+        index = self.evaluate(node.index)
+        try:
+            return obj[index]
+        except Exception:
+            return None
+
+    def visit_IndexAssignNode(self, node):
+        obj = self.evaluate(node.obj)
+        index = self.evaluate(node.index)
+        val = self.evaluate(node.expr)
+        obj[index] = val
+        return val
+

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>{{ title }} - Larapak MVC</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f4f6f9; color: #333; }
         header { border-bottom: 2px solid #007bff; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }

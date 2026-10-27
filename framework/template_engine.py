@@ -2,6 +2,7 @@
 
 import os
 import re
+import html
 from ngapak import Lexer, Parser, Compiler, NgapakError
 
 class TemplateEngine:
@@ -39,16 +40,17 @@ class TemplateEngine:
 
         return rendered
 
-    def evaluate_expression(self, expr_str):
+    def evaluate_expression_raw(self, expr_str):
         lexer = Lexer(expr_str)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
         ast = parser.parse()
         compiler = Compiler()
         main_fn = compiler.compile(ast)
-        
-        # Execute expression on VM
-        res = self.vm.execute_callable(main_fn, [])
+        return self.vm.execute_callable(main_fn, [])
+
+    def evaluate_expression(self, expr_str):
+        res = self.evaluate_expression_raw(expr_str)
         if res is True:
             return "bener"
         if res is False:
@@ -110,17 +112,61 @@ class TemplateEngine:
                     i += 1
                     continue
                     
-                # 4. Include directive
-                elif line.startswith("@include"):
-                    match = re.match(r'@include\s+"([^"]+)"', line)
+                # 4. Include directive (@include atau @mlebui)
+                elif line.startswith("@include") or line.startswith("@mlebui"):
+                    match = re.match(r'@(?:include|mlebui)\s+"([^"]+)"', line)
                     if match:
                         inc_name = match.group(1)
                         inc_content = self.render(inc_name, context)
                         output.append(inc_content)
                     i += 1
                     continue
+
+                # 5. CSRF directive (@csrf)
+                elif line == "@csrf":
+                    token = ""
+                    if "sesi" in self.vm.globals and hasattr(self.vm.globals["sesi"], "entuk"):
+                        token = self.vm.globals["sesi"].entuk("_token")
+                        if not token:
+                            token = getattr(self.vm.globals["sesi"], "session_id", "")
+                    output.append(f'<input type="hidden" name="_token" value="{token}">')
+                    i += 1
+                    continue
+
+                # 6. Error directive (@error atau @kleru)
+                elif line.startswith("@error") or line.startswith("@kleru"):
+                    match = re.match(r'@(?:error|kleru)\s*(?:\("([^"]+)"\)|"([^"]+)")', line)
+                    field = match.group(1) or match.group(2) if match else None
+                    has_error = False
+                    error_msg = ""
+                    err_dict = context.get("errors") or (self.vm.globals.get("errors") if "errors" in self.vm.globals else None)
+                    if err_dict and isinstance(err_dict, dict) and field in err_dict:
+                        has_error = True
+                        error_msg = err_dict[field]
+
+                    err_lines = []
+                    i += 1
+                    nest = 1
+                    while i < len(lines):
+                        sub_line = lines[i].strip()
+                        if sub_line.startswith("@error") or sub_line.startswith("@kleru") or sub_line.startswith("@nek") or sub_line.startswith("@baleni"):
+                            nest += 1
+                        elif sub_line == "@rampung":
+                            nest -= 1
+                            if nest == 0:
+                                break
+                        err_lines.append(lines[i])
+                        i += 1
+
+                    if has_error:
+                        context_with_err = dict(context)
+                        context_with_err["message"] = error_msg
+                        context_with_err["pesan"] = error_msg
+                        output.append(self.evaluate_template("\n".join(err_lines), context_with_err))
+                    i += 1
+                    continue
                     
-                # 5. Nek (conditional) directive
+                # 7. Nek (conditional) directive
                 elif line.startswith("@nek"):
                     expr_str = line[4:].strip()
                     if expr_str.endswith("ya"):
@@ -137,7 +183,7 @@ class TemplateEngine:
                     
                     while i < len(lines):
                         sub_line = lines[i].strip()
-                        if sub_line.startswith("@nek") or sub_line.startswith("@baleni"):
+                        if sub_line.startswith("@nek") or sub_line.startswith("@baleni") or sub_line.startswith("@error") or sub_line.startswith("@kleru"):
                             nest += 1
                         elif sub_line == "@rampung":
                             nest -= 1
@@ -159,29 +205,41 @@ class TemplateEngine:
                     i += 1
                     continue
                     
-                # 6. Baleni (loop) directive
+                # 8. Baleni (loop) directive
                 elif line.startswith("@baleni"):
-                    match = re.match(r'@baleni\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+saka\s+(.+)\s+nganti\s+(.+)', line)
-                    if match:
-                        var_name = match.group(1)
-                        start_expr = match.group(2)
-                        end_expr = match.group(3)
-                        
-                        body_lines = []
+                    match_foreach = re.match(r'@baleni\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+neng\s+(.+)', line)
+                    match_range = re.match(r'@baleni\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+saka\s+(.+)\s+nganti\s+(.+)', line)
+                    
+                    body_lines = []
+                    i += 1
+                    nest = 1
+                    while i < len(lines):
+                        sub_line = lines[i].strip()
+                        if sub_line.startswith("@nek") or sub_line.startswith("@baleni") or sub_line.startswith("@error") or sub_line.startswith("@kleru"):
+                            nest += 1
+                        elif sub_line == "@rampung":
+                            nest -= 1
+                            if nest == 0:
+                                break
+                        body_lines.append(lines[i])
                         i += 1
-                        nest = 1
-                        while i < len(lines):
-                            sub_line = lines[i].strip()
-                            if sub_line.startswith("@nek") or sub_line.startswith("@baleni"):
-                                nest += 1
-                            elif sub_line == "@rampung":
-                                nest -= 1
-                                if nest == 0:
-                                    break
-                            body_lines.append(lines[i])
-                            i += 1
-                            
-                        body_str = "\n".join(body_lines)
+                        
+                    body_str = "\n".join(body_lines)
+                    
+                    if match_foreach:
+                        var_name = match_foreach.group(1)
+                        coll_expr = match_foreach.group(2)
+                        coll_val = self.evaluate_expression_raw(coll_expr)
+                        if coll_val and hasattr(coll_val, '__iter__'):
+                            for item in coll_val:
+                                self.vm.globals[var_name] = item
+                                output.append(self.evaluate_template(body_str, context))
+                                if var_name in self.vm.globals:
+                                    del self.vm.globals[var_name]
+                    elif match_range:
+                        var_name = match_range.group(1)
+                        start_expr = match_range.group(2)
+                        end_expr = match_range.group(3)
                         
                         start_val = int(float(self.evaluate_expression(start_expr)))
                         end_val = int(float(self.evaluate_expression(end_expr)))
@@ -195,17 +253,28 @@ class TemplateEngine:
                     i += 1
                     continue
                     
-                # 7. Normal line (process interpolations)
+                # 9. Normal line (process interpolations: {!! raw !!} and {{ escaped }})
                 else:
                     raw_line = lines[i]
-                    def repl(match):
+                    def raw_repl(match):
                         expr = match.group(1).strip()
                         try:
                             return self.evaluate_expression(expr)
                         except NgapakError as e:
                             return f"{{{{ Error: {str(e)} }}}}"
+
+                    def escaped_repl(match):
+                        expr = match.group(1).strip()
+                        try:
+                            val = self.evaluate_expression(expr)
+                            return html.escape(str(val))
+                        except NgapakError as e:
+                            return f"{{{{ Error: {str(e)} }}}}"
                     
-                    interpolated = re.sub(r'\{\{\s*(.*?)\s*\}\}', repl, raw_line)
+                    # Unescaped raw interpolation first
+                    processed = re.sub(r'\{!!\s*(.*?)\s*!!\}', raw_repl, raw_line)
+                    # Escaped interpolation second
+                    interpolated = re.sub(r'\{\{\s*(.*?)\s*\}\}', escaped_repl, processed)
                     output.append(interpolated)
                     i += 1
                     

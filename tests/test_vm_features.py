@@ -90,5 +90,86 @@ class TestVMFeatures(unittest.TestCase):
         self.assertEqual(self.vm.globals["res_tabel"], "kucing")
         self.assertEqual(self.vm.globals["res_meong"], "Blacky muni meong")
 
+    def test_logical_operators(self):
+        source = """
+        res_lan1 = bener lan bener
+        res_lan2 = bener lan salah
+        res_utawa1 = bener utawa salah
+        res_utawa2 = salah utawa salah
+        res_ora1 = ora bener
+        res_ora2 = ora salah
+        
+        umur = 20
+        status = "aktif"
+        bisa_masuk = salah
+        nek umur >= 18 lan status == "aktif" ya
+            bisa_masuk = bener
+        liyane
+            bisa_masuk = salah
+        rampung
+        """
+        self.run_source(source)
+        self.assertTrue(self.vm.globals["res_lan1"])
+        self.assertFalse(self.vm.globals["res_lan2"])
+        self.assertTrue(self.vm.globals["res_utawa1"])
+        self.assertFalse(self.vm.globals["res_utawa2"])
+        self.assertFalse(self.vm.globals["res_ora1"])
+        self.assertTrue(self.vm.globals["res_ora2"])
+        self.assertTrue(self.vm.globals["bisa_masuk"])
+
+    def test_foreach_loop(self):
+        source = """
+        items = ["apel", "jeruk", "mangga"]
+        total_items = []
+        baleni buah neng items
+            total_items = total_items + [buah]
+        rampung
+        """
+        self.run_source(source)
+        self.assertEqual(self.vm.globals["total_items"], ["apel", "jeruk", "mangga"])
+
+    def test_loop_break_and_continue(self):
+        source = """
+        # Test mandeg (break)
+        terakhir = 0
+        baleni i saka 1 nganti 10
+            nek i == 5 ya
+                mandeg
+            rampung
+            terakhir = i
+        rampung
+
+        # Test terusna (continue)
+        ganjil = []
+        baleni j saka 1 nganti 5
+            nek j == 2 ya
+                terusna
+            rampung
+            ganjil = ganjil + [j]
+        rampung
+        """
+        self.run_source(source)
+        self.assertEqual(self.vm.globals["terakhir"], 4)
+        self.assertEqual(self.vm.globals["ganjil"], [1, 3, 4, 5])
+
+    def test_subscript_indexing(self):
+        source = """
+        daftar = ["siji", "loro", "telu"]
+        item0 = daftar[0]
+        item2 = daftar[2]
+        daftar[1] = "papat"
+
+        kamus = ["kota": "Banyumas", "provinsi": "Jawa Tengah"]
+        kota = kamus["kota"]
+        kamus["negara"] = "Indonesia"
+        """
+        self.run_source(source)
+        self.assertEqual(self.vm.globals["item0"], "siji")
+        self.assertEqual(self.vm.globals["item2"], "telu")
+        self.assertEqual(self.vm.globals["daftar"], ["siji", "papat", "telu"])
+        self.assertEqual(self.vm.globals["kota"], "Banyumas")
+        self.assertEqual(self.vm.globals["kamus"]["negara"], "Indonesia")
+
 if __name__ == '__main__':
     unittest.main()
+

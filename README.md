@@ -107,6 +107,7 @@ python ngapakin.py queue:work                     # Jalankan pemroses job queue
 python ngapakin.py package:install auth-helper    # Pasang paket baru
 python ngapakin.py repl                           # Masuk ke REPL interaktif
 python ngapakin.py debug berkas.ngpk              # Debug bytecode berkas
+python ngapakin.py test                           # Jalankan seluruh unit test suite
 ```
 
 ---

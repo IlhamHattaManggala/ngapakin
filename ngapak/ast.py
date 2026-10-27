@@ -141,3 +141,46 @@ class MemberAssignNode(ASTNode):
 
     def accept(self, visitor):
         return visitor.visit_MemberAssignNode(self)
+
+class UnaryOpNode(ASTNode):
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
+
+    def accept(self, visitor):
+        return visitor.visit_UnaryOpNode(self)
+
+class ForEachNode(ASTNode):
+    def __init__(self, var_name, collection_expr, body):
+        self.var_name = var_name
+        self.collection_expr = collection_expr
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visit_ForEachNode(self)
+
+class BreakNode(ASTNode):
+    def accept(self, visitor):
+        return visitor.visit_BreakNode(self)
+
+class ContinueNode(ASTNode):
+    def accept(self, visitor):
+        return visitor.visit_ContinueNode(self)
+
+class IndexAccessNode(ASTNode):
+    def __init__(self, obj, index):
+        self.obj = obj
+        self.index = index
+
+    def accept(self, visitor):
+        return visitor.visit_IndexAccessNode(self)
+
+class IndexAssignNode(ASTNode):
+    def __init__(self, obj, index, expr):
+        self.obj = obj
+        self.index = index
+        self.expr = expr
+
+    def accept(self, visitor):
+        return visitor.visit_IndexAssignNode(self)
+

@@ -12,6 +12,7 @@ class Compiler:
         self.scope_depth = 0
         self.locals = []            # Stack slots tracking: {"name": str, "depth": int}
         self.globals_tracked = set() # Track defined globals in this compilation unit
+        self.loop_stack = []        # Track active loops: {"breaks": [], "continues": []}
 
     def compile(self, node):
         """Entrypoint for compilation of an AST node."""
@@ -110,6 +111,12 @@ class Compiler:
                 self.emit_byte(OpCode.OP_SET_LOCAL, line)
                 self.emit_byte(idx, line)
                 self.emit_byte(OpCode.OP_POP, line)
+            elif node.name in self.globals_tracked:
+                # Existing global variable update
+                name_idx = self.add_constant(node.name)
+                self.emit_byte(OpCode.OP_SET_GLOBAL, line)
+                self.emit_byte(name_idx, line)
+                self.emit_byte(OpCode.OP_POP, line)
             else:
                 # Declare new local variable (stays on stack, slot maps to stack height)
                 self.locals.append({"name": node.name, "depth": self.scope_depth})
@@ -153,6 +160,8 @@ class Compiler:
             "GT": OpCode.OP_GT,
             "LTE": OpCode.OP_LTE,
             "GTE": OpCode.OP_GTE,
+            "LAN": OpCode.OP_AND,
+            "UTAWA": OpCode.OP_OR,
         }
         op = op_map.get(node.op.type)
         self.emit_byte(op, node.op.line)
@@ -264,10 +273,17 @@ class Compiler:
         exit_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, line)
         self.emit_byte(OpCode.OP_POP, line)  # Pop condition
         
+        loop_frame = {"breaks": [], "continues": []}
+        self.loop_stack.append(loop_frame)
+
         # Compile body
         for stmt in node.body:
             self.compile(stmt)
             
+        # Target for continue jumps
+        for cont_jump in loop_frame["continues"]:
+            self.patch_jump(cont_jump)
+
         # Increment i: i = i + step
         self.emit_byte(OpCode.OP_GET_LOCAL, line)
         self.emit_byte(i_idx, line)
@@ -285,8 +301,115 @@ class Compiler:
         self.patch_jump(exit_jump)
         self.emit_byte(OpCode.OP_POP, line)  # Pop loop condition value
         
+        # Target for break jumps
+        for brk_jump in loop_frame["breaks"]:
+            self.patch_jump(brk_jump)
+        self.loop_stack.pop()
+        
         # Pop i, end, step
         self.end_scope(line)
+
+    def visit_ForEachNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        
+        self.begin_scope()
+        # 1. Compile collection expression -> leaves collection on stack
+        self.compile(node.collection_expr)
+        coll_idx = len(self.locals)
+        self.locals.append({"name": f"_coll_{node.var_name}", "depth": self.scope_depth})
+        
+        # 2. Push 0 as initial index
+        zero_idx = self.add_constant(0)
+        self.emit_byte(OpCode.OP_CONSTANT, line)
+        self.emit_byte(zero_idx, line)
+        idx_idx = len(self.locals)
+        self.locals.append({"name": f"_idx_{node.var_name}", "depth": self.scope_depth})
+
+        # 3. Pre-allocate item variable slot
+        self.emit_byte(OpCode.OP_NULL, line)
+        item_idx = len(self.locals)
+        self.locals.append({"name": node.var_name, "depth": self.scope_depth})
+        
+        loop_start = len(self.current_function.chunk.code)
+        
+        # Condition: _idx < dowo(_coll)
+        # Push _idx
+        self.emit_byte(OpCode.OP_GET_LOCAL, line)
+        self.emit_byte(idx_idx, line)
+        # Call dowo(_coll)
+        dowo_name_idx = self.add_constant("dowo")
+        self.emit_byte(OpCode.OP_GET_GLOBAL, line)
+        self.emit_byte(dowo_name_idx, line)
+        self.emit_byte(OpCode.OP_GET_LOCAL, line)
+        self.emit_byte(coll_idx, line)
+        self.emit_byte(OpCode.OP_CALL, line)
+        self.emit_byte(1, line)
+        # Check _idx < dowo
+        self.emit_byte(OpCode.OP_LT, line)
+        
+        exit_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, line)
+        self.emit_byte(OpCode.OP_POP, line)  # Pop condition
+        
+        # Set item variable: item = _coll[_idx]
+        self.emit_byte(OpCode.OP_GET_LOCAL, line)
+        self.emit_byte(coll_idx, line)
+        self.emit_byte(OpCode.OP_GET_LOCAL, line)
+        self.emit_byte(idx_idx, line)
+        self.emit_byte(OpCode.OP_GET_INDEX, line)
+        self.emit_byte(OpCode.OP_SET_LOCAL, line)
+        self.emit_byte(item_idx, line)
+        self.emit_byte(OpCode.OP_POP, line)
+        
+        loop_frame = {"breaks": [], "continues": []}
+        self.loop_stack.append(loop_frame)
+        
+        # Compile body
+        for stmt in node.body:
+            self.compile(stmt)
+            
+        # Target for continue jumps
+        for cont_jump in loop_frame["continues"]:
+            self.patch_jump(cont_jump)
+            
+        # Increment index: _idx = _idx + 1
+        self.emit_byte(OpCode.OP_GET_LOCAL, line)
+        self.emit_byte(idx_idx, line)
+        one_idx = self.add_constant(1)
+        self.emit_byte(OpCode.OP_CONSTANT, line)
+        self.emit_byte(one_idx, line)
+        self.emit_byte(OpCode.OP_ADD, line)
+        self.emit_byte(OpCode.OP_SET_LOCAL, line)
+        self.emit_byte(idx_idx, line)
+        self.emit_byte(OpCode.OP_POP, line)
+        
+        # Jump back
+        self.emit_loop(loop_start, line)
+        
+        # Exit label
+        self.patch_jump(exit_jump)
+        self.emit_byte(OpCode.OP_POP, line)  # Pop loop condition value
+        
+        for brk_jump in loop_frame["breaks"]:
+            self.patch_jump(brk_jump)
+        self.loop_stack.pop()
+        
+        # Clean up scope
+        self.end_scope(line)
+
+    def visit_BreakNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        if not self.loop_stack:
+            raise NgapakSyntaxError("'mandeg' hanya dapat digunakan di dalam perulangan", line=line, filename=self.filename)
+        brk_jump = self.emit_jump(OpCode.OP_JUMP, line)
+        self.loop_stack[-1]["breaks"].append(brk_jump)
+
+    def visit_ContinueNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        if not self.loop_stack:
+            raise NgapakSyntaxError("'terusna' hanya dapat digunakan di dalam perulangan", line=line, filename=self.filename)
+        cont_jump = self.emit_jump(OpCode.OP_JUMP, line)
+        self.loop_stack[-1]["continues"].append(cont_jump)
+
 
     def visit_FuncDefNode(self, node):
         line = node.line if hasattr(node, 'line') else 1
@@ -426,3 +549,32 @@ class Compiler:
         member_idx = self.add_constant(node.member)
         self.emit_byte(OpCode.OP_SET_MEMBER, line)
         self.emit_byte(member_idx, line)
+
+    def visit_UnaryOpNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        if node.op.type == "ORA":
+            self.compile(node.expr)
+            self.emit_byte(OpCode.OP_NOT, line)
+        elif node.op.type == "MINUS":
+            zero_idx = self.add_constant(0)
+            self.emit_byte(OpCode.OP_CONSTANT, line)
+            self.emit_byte(zero_idx, line)
+            self.compile(node.expr)
+            self.emit_byte(OpCode.OP_SUB, line)
+        else:
+            self.compile(node.expr)
+
+    def visit_IndexAccessNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        self.compile(node.obj)
+        self.compile(node.index)
+        self.emit_byte(OpCode.OP_GET_INDEX, line)
+
+    def visit_IndexAssignNode(self, node):
+        line = node.line if hasattr(node, 'line') else 1
+        self.compile(node.obj)
+        self.compile(node.index)
+        self.compile(node.expr)
+        self.emit_byte(OpCode.OP_SET_INDEX, line)
+        self.emit_byte(OpCode.OP_POP, line)
+

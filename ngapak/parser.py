@@ -91,7 +91,13 @@ class Parser:
         elif self.match(T_KELAS):
             node = self.class_def_statement()
 
-        # Expression statement or Assignment (variable or member)
+        elif self.match(T_MANDEG):
+            node = BreakNode()
+
+        elif self.match(T_TERUSNA):
+            node = ContinueNode()
+
+        # Expression statement or Assignment (variable, member, or index)
         else:
             expr = self.expression()
             if self.match(T_ASSIGN):
@@ -99,6 +105,8 @@ class Parser:
                     node = VarAssignNode(expr.name, self.expression())
                 elif isinstance(expr, MemberAccessNode):
                     node = MemberAssignNode(expr.obj, expr.member, self.expression())
+                elif isinstance(expr, IndexAccessNode):
+                    node = IndexAssignNode(expr.obj, expr.index, self.expression())
                 else:
                     self.error("Sisi kiri penugasan tidak valid")
             else:
@@ -141,24 +149,38 @@ class Parser:
 
     def for_statement(self):
         var_tok = self.consume(T_IDENTIFIER, "Diharapkan nama variabel setelah 'baleni'")
-        self.consume(T_SAKA, "Diharapkan keyword 'saka' setelah variabel loop")
-        start_expr = self.expression()
-        self.consume(T_NGANTI, "Diharapkan keyword 'nganti' setelah nilai awal loop")
-        end_expr = self.expression()
-        
-        while self.match(T_NEWLINE):
-            pass
+        if self.match(T_NENG):
+            coll_expr = self.expression()
+            while self.match(T_NEWLINE):
+                pass
+            body = []
+            while not self.check(T_EOF) and not self.check(T_RAMPUNG):
+                stmt = self.statement()
+                if stmt:
+                    body.append(stmt)
+                while self.match(T_NEWLINE):
+                    pass
+            self.consume(T_RAMPUNG, "Diharapkan keyword 'rampung' untuk menutup blok 'baleni'")
+            return ForEachNode(var_tok.value, coll_expr, body)
+        else:
+            self.consume(T_SAKA, "Diharapkan keyword 'saka' atau 'neng' setelah variabel loop")
+            start_expr = self.expression()
+            self.consume(T_NGANTI, "Diharapkan keyword 'nganti' setelah nilai awal loop")
+            end_expr = self.expression()
             
-        body = []
-        while not self.check(T_EOF) and not self.check(T_RAMPUNG):
-            stmt = self.statement()
-            if stmt:
-                body.append(stmt)
             while self.match(T_NEWLINE):
                 pass
                 
-        self.consume(T_RAMPUNG, "Diharapkan keyword 'rampung' untuk menutup blok 'baleni'")
-        return ForNode(var_tok.value, start_expr, end_expr, body)
+            body = []
+            while not self.check(T_EOF) and not self.check(T_RAMPUNG):
+                stmt = self.statement()
+                if stmt:
+                    body.append(stmt)
+                while self.match(T_NEWLINE):
+                    pass
+                    
+            self.consume(T_RAMPUNG, "Diharapkan keyword 'rampung' untuk menutup blok 'baleni'")
+            return ForNode(var_tok.value, start_expr, end_expr, body)
 
     def func_def_statement(self):
         if self.check(T_LPAREN):
@@ -215,7 +237,29 @@ class Parser:
         return ClassDefNode(name_tok.value, parent_name, body)
 
     def expression(self):
-        return self.comparison()
+        return self.logical_or()
+
+    def logical_or(self):
+        expr = self.logical_and()
+        while self.match(T_UTAWA):
+            op_tok = self.tokens[self.pos - 1]
+            right = self.logical_and()
+            node = BinOpNode(expr, op_tok, right)
+            node.line = op_tok.line
+            node.column = op_tok.column
+            expr = node
+        return expr
+
+    def logical_and(self):
+        expr = self.comparison()
+        while self.match(T_LAN):
+            op_tok = self.tokens[self.pos - 1]
+            right = self.comparison()
+            node = BinOpNode(expr, op_tok, right)
+            node.line = op_tok.line
+            node.column = op_tok.column
+            expr = node
+        return expr
 
     def comparison(self):
         expr = self.term()
@@ -244,11 +288,11 @@ class Parser:
         return expr
 
     def factor(self):
-        expr = self.primary()
+        expr = self.unary()
         
         while self.match(T_MUL, T_DIV):
             op_tok = self.tokens[self.pos - 1]
-            right = self.primary()
+            right = self.unary()
             node = BinOpNode(expr, op_tok, right)
             node.line = op_tok.line
             node.column = op_tok.column
@@ -256,29 +300,49 @@ class Parser:
             
         return expr
 
+    def unary(self):
+        if self.match(T_ORA, T_MINUS):
+            op_tok = self.tokens[self.pos - 1]
+            right = self.unary()
+            node = UnaryOpNode(op_tok, right)
+            node.line = op_tok.line
+            node.column = op_tok.column
+            return node
+        return self.primary()
+
     def primary(self):
         start_tok = self.current_token
         expr = self.base_primary()
         
-        while self.match(T_DOT):
-            dot_tok = self.tokens[self.pos - 1]
-            if self.current_token and (self.check(T_IDENTIFIER) or self.current_token.type in (T_TULIS, T_NEK, T_YA, T_LIYANE, T_RAMPUNG, T_BALENI, T_SAKA, T_NGANTI, T_GAWE, T_BALEKNA, T_BENER, T_SALAH, T_KOSONG, T_KELAS, T_EXTENDS)):
-                name_tok = self.current_token
-                self.advance()
-            else:
-                self.error("Diharapkan nama properti/metode setelah '.'")
-            if self.match(T_LPAREN):
-                args = []
-                if not self.check(T_RPAREN):
-                    args.append(self.expression())
-                    while self.match(T_COMMA):
+        while True:
+            if self.match(T_DOT):
+                dot_tok = self.tokens[self.pos - 1]
+                if self.current_token and (self.check(T_IDENTIFIER) or self.current_token.type in (T_TULIS, T_NEK, T_YA, T_LIYANE, T_RAMPUNG, T_BALENI, T_SAKA, T_NGANTI, T_GAWE, T_BALEKNA, T_BENER, T_SALAH, T_KOSONG, T_KELAS, T_EXTENDS, T_LAN, T_UTAWA, T_ORA, T_NENG, T_MANDEG, T_TERUSNA)):
+                    name_tok = self.current_token
+                    self.advance()
+                else:
+                    self.error("Diharapkan nama properti/metode setelah '.'")
+                if self.match(T_LPAREN):
+                    args = []
+                    if not self.check(T_RPAREN):
                         args.append(self.expression())
-                self.consume(T_RPAREN, "Diharapkan ')' setelah daftar argumen")
-                expr = MethodCallNode(expr, name_tok.value, args)
+                        while self.match(T_COMMA):
+                            args.append(self.expression())
+                    self.consume(T_RPAREN, "Diharapkan ')' setelah daftar argumen")
+                    expr = MethodCallNode(expr, name_tok.value, args)
+                else:
+                    expr = MemberAccessNode(expr, name_tok.value)
+                expr.line = dot_tok.line
+                expr.column = dot_tok.column
+            elif self.match(T_LBRACKET):
+                bracket_tok = self.tokens[self.pos - 1]
+                idx_expr = self.expression()
+                self.consume(T_RBRACKET, "Diharapkan ']' setelah indeks")
+                expr = IndexAccessNode(expr, idx_expr)
+                expr.line = bracket_tok.line
+                expr.column = bracket_tok.column
             else:
-                expr = MemberAccessNode(expr, name_tok.value)
-            expr.line = dot_tok.line
-            expr.column = dot_tok.column
+                break
             
         return expr
 

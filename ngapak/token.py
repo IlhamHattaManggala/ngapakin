@@ -16,6 +16,12 @@ T_SALAH = "SALAH"
 T_KOSONG = "KOSONG"
 T_KELAS = "KELAS"
 T_EXTENDS = "EXTENDS"
+T_LAN = "LAN"
+T_UTAWA = "UTAWA"
+T_ORA = "ORA"
+T_NENG = "NENG"
+T_MANDEG = "MANDEG"
+T_TERUSNA = "TERUSNA"
 
 # Literals
 T_IDENTIFIER = "IDENTIFIER"
@@ -63,6 +69,12 @@ KEYWORDS = {
     "kosong": T_KOSONG,
     "kelas": T_KELAS,
     "extends": T_EXTENDS,
+    "lan": T_LAN,
+    "utawa": T_UTAWA,
+    "ora": T_ORA,
+    "neng": T_NENG,
+    "mandeg": T_MANDEG,
+    "terusna": T_TERUSNA,
 }
 
 class Token:

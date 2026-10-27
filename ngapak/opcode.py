@@ -33,4 +33,9 @@ class OpCode:
     OP_BUILD_LIST = 29     # Builds list from stack (arity/number of elements is next byte)
     OP_DEFINE_CLASS = 30   # Defines class: name (const idx), parent (const idx), pops body dict
     OP_SET_MEMBER = 31     # Sets member/attribute by name: name (const idx), pops val, pops obj, pushes val
+    OP_NOT = 32            # Pops val, pushes not val
+    OP_AND = 33            # Pops b, pops a, pushes bool(a and b)
+    OP_OR = 34             # Pops b, pops a, pushes bool(a or b)
+    OP_GET_INDEX = 35      # Pops index, pops obj, pushes obj[index]
+    OP_SET_INDEX = 36      # Pops val, pops index, pops obj, sets obj[index] = val, pushes val
 

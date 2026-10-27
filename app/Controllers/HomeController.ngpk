@@ -2,7 +2,8 @@
 
 gawe index(req, res)
     user = User.golek(1)
-    balekna res.view("index", ["title": "Sugeng Rawuh", "user": user])
+    kabeh_user = ["Ilham", "Hatta", "Manggala"]
+    balekna res.view("index", ["title": "Sugeng Rawuh", "user": user, "kabeh_user": kabeh_user])
 rampung
 
 gawe dashboard(req, res)

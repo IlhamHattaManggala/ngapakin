@@ -52,5 +52,7 @@ class DatabaseConnection:
             self._conn.close()
             self._conn = None
 
+from .env import env
+
 # Global db connection
-db_manager = DatabaseConnection("database.sqlite")
+db_manager = DatabaseConnection(env("DB_DATABASE", "database.sqlite"))

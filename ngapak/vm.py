@@ -208,6 +208,8 @@ class VM:
                         self.push(a + b)
                     elif isinstance(a, str) and isinstance(b, str):
                         self.push(a + b)
+                    elif isinstance(a, list) and isinstance(b, list):
+                        self.push(a + b)
                     else:
                         raise NgapakRuntimeError(f"Operasi '+' tidak didukung untuk tipe data {type(a).__name__} dan {type(b).__name__}.", line)
                         
@@ -520,6 +522,48 @@ class VM:
                             setattr(obj, name, val)
                         except AttributeError:
                             raise NgapakRuntimeError(f"Tidak dapat mengubah properti '{name}' pada objek tipe '{type(obj).__name__}'.", line)
+                    self.push(val)
+                    
+                elif opcode == OpCode.OP_NOT:
+                    val = self.pop()
+                    self.push(True if not val else False)
+                    
+                elif opcode == OpCode.OP_AND:
+                    b = self.pop()
+                    a = self.pop()
+                    self.push(bool(a and b))
+                    
+                elif opcode == OpCode.OP_OR:
+                    b = self.pop()
+                    a = self.pop()
+                    self.push(bool(a or b))
+                    
+                elif opcode == OpCode.OP_GET_INDEX:
+                    idx = self.pop()
+                    obj = self.pop()
+                    if isinstance(obj, (list, tuple, str)):
+                        try:
+                            self.push(obj[int(idx)])
+                        except (IndexError, ValueError):
+                            self.push(None)
+                    elif isinstance(obj, dict):
+                        self.push(obj.get(idx))
+                    else:
+                        try:
+                            self.push(obj[idx])
+                        except Exception:
+                            self.push(None)
+                            
+                elif opcode == OpCode.OP_SET_INDEX:
+                    val = self.pop()
+                    idx = self.pop()
+                    obj = self.pop()
+                    if isinstance(obj, list):
+                        obj[int(idx)] = val
+                    elif isinstance(obj, dict):
+                        obj[idx] = val
+                    else:
+                        obj[idx] = val
                     self.push(val)
                     
                 else:

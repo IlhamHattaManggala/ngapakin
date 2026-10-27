@@ -74,5 +74,59 @@ class TestTemplate(unittest.TestCase):
         self.assertIn("Tengah", res)
         self.assertIn("Layout End", res)
 
+    def test_include_and_mlebui(self):
+        self.write_view("nav.nview", "<nav>Menu</nav>")
+        content = """<div>
+        @mlebui "nav.nview"
+        Kaca Utama
+        </div>"""
+        res = self.engine.evaluate_template(content, {})
+        self.assertIn("<nav>Menu</nav>", res)
+        self.assertIn("Kaca Utama", res)
+
+    def test_csrf_directive(self):
+        class DummySession:
+            def entuk(self, key):
+                return "mock_token_123"
+        self.vm.globals["sesi"] = DummySession()
+        content = """<form>
+        @csrf
+        </form>"""
+        res = self.engine.evaluate_template(content, {})
+        self.assertIn('<input type="hidden" name="_token" value="mock_token_123">', res)
+
+    def test_error_and_kleru_directive(self):
+        content = """
+        @kleru "email"
+            <span class="error">{{ pesan }}</span>
+        @rampung
+        """
+        # When error exists
+        res_with_err = self.engine.evaluate_template(content, {"errors": {"email": "Email ora sah!"}})
+        self.assertIn("Email ora sah!", res_with_err)
+
+        # When error does not exist
+        res_no_err = self.engine.evaluate_template(content, {"errors": {}})
+        self.assertNotIn("Email ora sah!", res_no_err)
+
+    def test_foreach_in_template(self):
+        content = """
+        @baleni nama neng users
+            <li>{{ nama }}</li>
+        @rampung
+        """
+        res = self.engine.evaluate_template(content, {"users": ["Ilham", "Hatta", "Manggala"]})
+        self.assertIn("<li>Ilham</li>", res)
+        self.assertIn("<li>Hatta</li>", res)
+        self.assertIn("<li>Manggala</li>", res)
+
+    def test_html_escaping_and_raw(self):
+        content = "Escaped: {{ script }} | Raw: {!! script !!}"
+        context = {"script": "<script>alert('XSS')</script>"}
+        res = self.engine.evaluate_template(content, context)
+        self.assertIn("&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;", res)
+        self.assertIn("<script>alert('XSS')</script>", res)
+
 if __name__ == '__main__':
     unittest.main()
+
