@@ -321,7 +321,7 @@ rute.get("/", "HomeController@index")
     api_routes = """# API routes for Larapak
 
 rute.get("/status", gawe(req, res)
-    balekna res.json(["status": "bener", "app": "Larapak"])
+    balekna res.json(["status": "bener", "app": "Larapak", "author": "Ilham Hatta Manggala"])
 rampung)
 """
     with open(os.path.join(target_dir, "routes/api.ngpk"), "w", encoding="utf-8") as f:
@@ -337,115 +337,35 @@ rampung
     with open(os.path.join(target_dir, "app/Controllers/HomeController.ngpk"), "w", encoding="utf-8") as f:
         f.write(home_controller)
 
-    # 4. resources/views/layout.nview
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    layout_src = os.path.join(script_dir, "resources/views/layout.nview")
-    if os.path.exists(layout_src):
-        with open(layout_src, "r", encoding="utf-8") as f:
-            layout_view = f.read()
-    else:
-        layout_view = """<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Larapak</title>
-</head>
-<body>
-    @yield "content"
-</body>
-</html>"""
+    # 4. Self-contained embedded assets from framework.assets
+    import base64
+    from framework.assets import LOGO_BASE64, LAYOUT_TEMPLATE, INDEX_TEMPLATE, STYLE_CSS
+
+    # resources/views/layout.nview
     with open(os.path.join(target_dir, "resources/views/layout.nview"), "w", encoding="utf-8") as f:
-        f.write(layout_view)
+        f.write(LAYOUT_TEMPLATE)
 
-    # 5. resources/views/index.nview
-    index_src = os.path.join(script_dir, "resources/views/index.nview")
-    if os.path.exists(index_src):
-        with open(index_src, "r", encoding="utf-8") as f:
-            index_view = f.read()
-    else:
-        index_view = """@layout "layout.nview"
-@section "content"
-    <h1>Sugeng Rawuh ing {{ title }}</h1>
-@rampung"""
+    # resources/views/index.nview
     with open(os.path.join(target_dir, "resources/views/index.nview"), "w", encoding="utf-8") as f:
-        f.write(index_view)
+        f.write(INDEX_TEMPLATE)
 
-    # 6. public/ assets (CSS, images, favicon)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # 5. public/ assets (CSS, images, favicon)
     os.makedirs(os.path.join(target_dir, "public/images"), exist_ok=True)
     os.makedirs(os.path.join(target_dir, "public/css"), exist_ok=True)
-    
-    import shutil
-    for rel_path in ["images/logo.png", "favicon.png", "favicon.ico", "css/style.css"]:
-        src = os.path.join(script_dir, "public", rel_path)
-        dst = os.path.join(target_dir, "public", rel_path)
-        if os.path.exists(src):
-            try:
-                shutil.copy2(src, dst)
-            except Exception:
-                pass
+    os.makedirs(os.path.join(target_dir, "public/js"), exist_ok=True)
 
-    current_css = os.path.join(script_dir, "public/css/style.css")
-    if os.path.exists(current_css):
-        with open(current_css, "r", encoding="utf-8") as f:
-            css_content = f.read()
-    else:
-        css_content = """@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-:root {
-  --bg-base: #06080d; --bg-surface: #0d121c; --bg-surface-elevated: #131a27;
-  --border-subtle: rgba(255,255,255,0.07); --border-highlight: rgba(255,255,255,0.14);
-  --accent-primary: #f58220; --accent-hover: #e65100; --accent-glow: rgba(245,130,32,0.15); --accent-cream: #f4e8d3;
-  --text-primary: #f8fafc; --text-secondary: #94a3b8; --text-muted: #64748b; --text-accent: #fb923c;
-  --radius-outer: 24px; --radius-inner: 18px; --radius-pill: 9999px;
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif; --font-mono: 'JetBrains Mono', monospace;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); background: var(--bg-base); color: var(--text-primary); line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
-.ambient-glow { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 1000px; height: 480px; background: radial-gradient(ellipse 60% 40% at 50% 0%, var(--accent-glow), transparent 70%); pointer-events: none; }
-.layout-wrapper { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; display: flex; flex-direction: column; min-height: 100vh; }
-.nav-island { display: flex; align-items: center; justify-content: space-between; background: rgba(13,18,28,0.75); backdrop-filter: blur(16px); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); padding: 0.6rem 1.25rem; margin-bottom: 3.5rem; }
-.brand-group { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
-.brand-icon { width: 32px; height: 32px; object-fit: contain; }
-.brand-title { font-weight: 700; font-size: 1.05rem; }
-.badge-version { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-pill); background: rgba(245,130,32,0.12); color: var(--text-accent); border: 1px solid rgba(245,130,32,0.25); }
-.nav-links { display: flex; align-items: center; gap: 0.5rem; }
-.nav-item { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; padding: 0.4rem 0.85rem; border-radius: var(--radius-pill); }
-.nav-item:hover { color: var(--text-primary); background: var(--bg-surface-elevated); }
-.nav-item.highlight { color: var(--accent-cream); background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); }
-.nav-status { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; font-weight: 500; color: #34d399; padding-left: 0.75rem; border-left: 1px solid var(--border-subtle); }
-.status-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
-.hero-section { text-align: center; max-width: 760px; margin: 0 auto 3.5rem; }
-.eyebrow-pill { display: inline-flex; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-accent); background: rgba(245,130,32,0.08); border: 1px solid rgba(245,130,32,0.22); border-radius: var(--radius-pill); padding: 0.35rem 0.9rem; margin-bottom: 1.5rem; }
-.hero-title { font-size: 2.85rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1.15; margin-bottom: 1.25rem; }
-.hero-title .highlight { background: linear-gradient(135deg, #fff 30%, var(--accent-cream) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero-subtitle { font-size: 1.1rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 2rem; }
-.hero-actions { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
-.btn-primary { display: inline-flex; align-items: center; gap: 0.75rem; background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%); color: #fff; font-size: 0.92rem; font-weight: 600; padding: 0.65rem 1.35rem; border-radius: var(--radius-pill); text-decoration: none; box-shadow: 0 4px 16px rgba(245,130,32,0.3); border: none; }
-.btn-secondary { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--bg-surface); color: var(--text-primary); font-size: 0.92rem; font-weight: 500; padding: 0.65rem 1.35rem; border-radius: var(--radius-pill); text-decoration: none; border: 1px solid var(--border-subtle); }
-.terminal-card { max-width: 600px; margin: 0 auto; background: rgba(13,18,28,0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 0.35rem; }
-.terminal-inner { display: flex; align-items: center; justify-content: space-between; background: var(--bg-base); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-inner); padding: 0.85rem 1.25rem; font-family: var(--font-mono); font-size: 0.9rem; }
-.terminal-prompt { display: flex; align-items: center; gap: 0.75rem; }
-.terminal-dollar { color: var(--accent-primary); }
-.btn-copy { background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: var(--radius-pill); cursor: pointer; }
-.bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; margin-bottom: 3.5rem; }
-.bento-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 0.4rem; }
-.bento-inner { background: var(--bg-surface-elevated); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--radius-inner); padding: 1.75rem; height: 100%; display: flex; flex-direction: column; }
-.col-8 { grid-column: span 8; } .col-4 { grid-column: span 4; }
-.card-header-badge { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
-.card-title { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem; }
-.card-description { font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 1.25rem; flex-grow: 1; }
-.card-code-tag { display: inline-block; align-self: flex-start; font-family: var(--font-mono); font-size: 0.78rem; background: rgba(0,0,0,0.3); color: var(--accent-cream); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid var(--border-subtle); }
-.spec-bar { display: flex; align-items: center; justify-content: space-around; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-outer); padding: 1.25rem 2rem; margin-bottom: 3.5rem; flex-wrap: wrap; gap: 1.5rem; }
-.spec-item { display: flex; flex-direction: column; gap: 0.2rem; }
-.spec-label { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
-.spec-value { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
-footer { margin-top: auto; border-top: 1px solid var(--border-subtle); padding-top: 2rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap; gap: 1rem; }
-.footer-link { color: var(--text-accent); text-decoration: none; font-weight: 500; }
-@media (max-width: 860px) { .hero-title { font-size: 2.2rem; } .col-8, .col-4 { grid-column: span 12; } .nav-island { flex-direction: column; gap: 1rem; border-radius: var(--radius-outer); } .spec-bar { flex-direction: column; align-items: flex-start; } }
-"""
+    # Decode and save brand logo & favicons reliably
+    logo_bytes = base64.b64decode(LOGO_BASE64)
+    with open(os.path.join(target_dir, "public/images/logo.png"), "wb") as f:
+        f.write(logo_bytes)
+    with open(os.path.join(target_dir, "public/favicon.png"), "wb") as f:
+        f.write(logo_bytes)
+    with open(os.path.join(target_dir, "public/favicon.ico"), "wb") as f:
+        f.write(logo_bytes)
+
+    # Save CSS stylesheet
     with open(os.path.join(target_dir, "public/css/style.css"), "w", encoding="utf-8") as f:
-        f.write(css_content)
+        f.write(STYLE_CSS)
 
     # 7. .env and .env.example
     env_content = f"""APP_NAME={project_name}

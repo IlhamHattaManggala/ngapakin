@@ -1,4 +1,5 @@
 include README.md
 include LICENSE
-recursive-include public *
+recursive-include framework *.py
 recursive-include resources *
+recursive-include public *
