@@ -22,7 +22,7 @@ def print_usage():
     print("  python ngapakin.py db:seed")
     print("  python ngapakin.py queue:work")
     print("  python ngapakin.py cache:clear")
-    print("  python ngapakin.py new <NamaProject>")
+    print("  python ngapakin.py new <NamaProject> [--bahasa=ngapak|indonesia|english]")
     print("  python ngapakin.py package:install <nama-package>")
     print("  python ngapakin.py repl")
     print("  python ngapakin.py test")
@@ -40,6 +40,7 @@ def create_vm(router=None):
     from framework.auth import Auth
     from framework.queue import Queue
     from framework.env import env
+    from framework.hashing import Hash
     
     vm = VM()
     Response.active_vm = vm
@@ -54,9 +55,11 @@ def create_vm(router=None):
     vm.globals["auth"] = Auth(vm)
     vm.globals["queue"] = Queue(vm)
     vm.globals["env"] = env
+    vm.globals["hash"] = Hash
     
-    # Autoload all models in app/Models/
-    models_path = "app/Models"
+    # Autoload all models in active models directory
+    from framework.paths import get_models_path
+    models_path = get_models_path()
     if os.path.exists(models_path):
         for filename in os.listdir(models_path):
             if filename.endswith(".ngpk"):
@@ -90,8 +93,9 @@ def get_router():
     router = Router()
     vm = create_vm(router)
     
-    # Load routing files
-    for routes_file in ("routes/web.ngpk", "routes/api.ngpk"):
+    from framework.paths import get_route_files
+    # Load active routing files
+    for routes_file in get_route_files():
         if os.path.exists(routes_file):
             with open(routes_file, "r", encoding="utf-8") as f:
                 source = f.read()
@@ -126,20 +130,25 @@ def run_migration_file(filepath, action="munggah"):
     else:
         raise ValueError(f"Fungsi '{action}' tidak ditemukan di berkas migrasi '{filepath}'.")
 
-def run_server(port=None):
-    from http.server import HTTPServer, BaseHTTPRequestHandler
+def run_server(host=None, port=None):
+    from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
     import urllib.parse
     import mimetypes
     from framework.controller import ControllerLoader
     from framework.middleware import MiddlewarePipeline
     from framework.request import Request
     from framework.response import Response
+    from framework.session import Session
+    from framework.csrf import CSRF, CSRFException
+    from framework.upload import PayloadTooLargeError
     from framework.env import env
     
+    from framework.paths import get_controllers_path, get_middleware_path, get_public_path
+    host = host or env("APP_HOST", "127.0.0.1")
     port = int(port or env("APP_PORT", 8000))
     router = get_router()
-    loader = ControllerLoader(os.path.abspath("app/Controllers"), router.vm)
-    pipeline = MiddlewarePipeline(os.path.abspath("app/Middleware"), router.vm)
+    loader = ControllerLoader(os.path.abspath(get_controllers_path()), router.vm)
+    pipeline = MiddlewarePipeline(os.path.abspath(get_middleware_path()), router.vm)
     
     class LarapakHandler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
@@ -149,13 +158,13 @@ def run_server(port=None):
             parsed_url = urllib.parse.urlparse(self.path)
             path = parsed_url.path
             
-            # Static file serving from public/ directory
+            # Static file serving from active public directory
             if method == "GET":
-                public_dir = os.path.abspath("public")
+                public_dir = os.path.abspath(get_public_path())
                 clean_path = path.lstrip("/").replace("\\", "/")
                 if clean_path:
                     candidate_path = os.path.abspath(os.path.join(public_dir, clean_path))
-                    if candidate_path.startswith(public_dir) and os.path.isfile(candidate_path):
+                    if candidate_path.startswith(public_dir + os.sep) and os.path.isfile(candidate_path):
                         mime_type, _ = mimetypes.guess_type(candidate_path)
                         mime_type = mime_type or "application/octet-stream"
                         file_size = os.path.getsize(candidate_path)
@@ -169,27 +178,21 @@ def run_server(port=None):
                                 self.wfile.write(chunk)
                         return
             
-            query = urllib.parse.parse_qs(parsed_url.query)
+            query = urllib.parse.parse_qs(parsed_url.query, keep_blank_values=True)
             query = {k: v[0] if len(v) == 1 else v for k, v in query.items()}
             
-            body = {}
-            if method in ("POST", "PUT"):
-                content_length = int(self.headers.get('Content-Length', 0))
-                if content_length > 0:
-                    raw_body = self.rfile.read(content_length).decode('utf-8')
-                    try:
-                        import json
-                        body = json.loads(raw_body)
-                    except json.JSONDecodeError:
-                        body = urllib.parse.parse_qs(raw_body)
-                        body = {k: v[0] if len(v) == 1 else v for k, v in body.items()}
+            raw_body = b""
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                raw_body = self.rfile.read(content_length)
 
-            route, params = router.match(method, path)
-            if not route:
-                self.send_response(404)
-                self.send_header("Content-Type", "text/html")
+            try:
+                body, files = Request.parse_payload(dict(self.headers), raw_body)
+            except PayloadTooLargeError:
+                self.send_response(413)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"<h1>404 Halaman Tidak Ditemukan</h1><p>Larapak web framework.</p>")
+                self.wfile.write(b"<h1>413 Payload Too Large</h1><p>Ukuran berkas/payload melebihi batas.</p>")
                 return
 
             req = Request(
@@ -197,12 +200,12 @@ def run_server(port=None):
                 path=path,
                 headers=dict(self.headers),
                 query=query,
-                params=params,
-                body=body
+                body=body,
+                files=files,
+                raw_body=raw_body
             )
-            
+
             # Load or initialize session
-            from framework.session import Session
             session_id = req.cookie("larapak_session")
             session = Session(session_id)
             session.start()
@@ -210,13 +213,41 @@ def run_server(port=None):
             req.session = session
             router.vm.globals["sesi"] = session
             
+            # Ensure CSRF token is available
+            CSRF.token(session)
+
+            # CSRF Verification on state-changing requests
+            try:
+                CSRF.verify(req, session)
+            except CSRFException as e:
+                session.save()
+                self.send_response(403)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(f"<h1>403 Forbidden</h1><p>{str(e)}</p>".encode("utf-8"))
+                return
+
+            # Match Route with effective HTTP method
+            route, params = router.match(req.method, path)
+            if not route:
+                session.save()
+                self.send_response(404)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"<h1>404 Halaman Tidak Ditemukan</h1><p>Larapak web framework.</p>")
+                return
+
+            req.params = params
             res = Response()
+            Response.active_vm = router.vm
 
             try:
                 def destination(r_req, r_res):
                     action = route["action"]
-                    if hasattr(action, 'chunk') or callable(action):
+                    if hasattr(action, 'chunk'):
                         return router.vm.execute_callable(action, [r_req, r_res])
+                    elif callable(action):
+                        return action(r_req, r_res)
                     else:
                         return loader.call_action(action, r_req, r_res)
 
@@ -225,8 +256,8 @@ def run_server(port=None):
                 if not isinstance(final_res, Response):
                     final_res = Response(content=str(final_res))
 
-                # Inject session cookie and save session
-                final_res.cookie("larapak_session", session.session_id, path="/")
+                # Inject secure session cookie and save session
+                final_res.cookie("larapak_session", session.session_id, path="/", httponly=True)
                 session.save()
 
                 self.send_response(final_res.status)
@@ -244,6 +275,7 @@ def run_server(port=None):
                         cookie_str += "; Secure"
                     if cookie_data.get('httponly'):
                         cookie_str += "; HttpOnly"
+                    cookie_str += "; SameSite=Lax"
                     self.send_header("Set-Cookie", cookie_str)
                 self.end_headers()
                 
@@ -254,15 +286,16 @@ def run_server(port=None):
             except Exception as e:
                 session.save()
                 self.send_response(500)
-                self.send_header("Content-Type", "text/html")
-                cookie_str = f"larapak_session={session.session_id}; Path=/"
-                self.send_header("Set-Cookie", cookie_str)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
                 err_msg = f"<h1>500 Internal Server Error</h1><p>{str(e)}</p>"
                 self.wfile.write(err_msg.encode('utf-8'))
                 import traceback
                 traceback.print_exc()
-
+            finally:
+                for f in files.values():
+                    if hasattr(f, "cleanup"):
+                        f.cleanup()
 
         def do_GET(self):
             self.handle_http_request("GET")
@@ -273,106 +306,111 @@ def run_server(port=None):
         def do_PUT(self):
             self.handle_http_request("PUT")
 
+        def do_PATCH(self):
+            self.handle_http_request("PATCH")
+
         def do_DELETE(self):
             self.handle_http_request("DELETE")
 
-    print(f"Larapak server aktif di http://localhost:{port} [SERVER] (Tekan Ctrl+C untuk berhenti)")
-    httpd = HTTPServer(('', port), LarapakHandler)
+    display_host = "localhost" if host in ("127.0.0.1", "0.0.0.0") else host
+    print(f"Larapak development server aktif di http://{display_host}:{port} [Multi-threaded] (Tekan Ctrl+C untuk berhenti)")
+    httpd = ThreadingHTTPServer((host, port), LarapakHandler)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\nLarapak server dihentikan.")
         httpd.server_close()
 
-def create_new_project(project_name):
+def create_new_project(project_name, language="english"):
+    from framework.paths import normalize_language, PATHS_CONFIG
+    lang = normalize_language(language)
+    paths = PATHS_CONFIG[lang]
+
     target_dir = os.path.abspath(project_name)
     if os.path.exists(target_dir) and os.listdir(target_dir):
         print(f"Error: Direktori '{project_name}' sudah ada dan tidak kosong.")
         sys.exit(1)
 
-    print(f"🚀 Nggawe proyek Larapak anyar ing folder: '{project_name}'...")
+    lang_titles = {
+        "ngapak": "dialek Ngapak",
+        "indonesia": "Bahasa Indonesia",
+        "english": "English standard"
+    }
+    print(f"🚀 Nggawe proyek Larapak anyar ing folder: '{project_name}' [Basa: {lang_titles.get(lang, lang)}]...")
 
-    # Struktur folder aplikasi bersih
+    # Struktur folder aplikasi bersih berdasarkan bahasa
     folders = [
-        "app/Controllers",
-        "app/Models",
-        "app/Middleware",
-        "app/Jobs",
-        "database/migrations",
-        "database/seeders",
-        "public/css",
-        "public/js",
-        "public/images",
-        "resources/views",
-        "routes",
+        paths["controllers"],
+        paths["models"],
+        paths["middleware"],
+        paths["jobs"],
+        paths["migrations"],
+        paths["seeders"],
+        paths["public_css"],
+        paths["public_js"],
+        paths["public_images"],
+        paths["views"],
+        paths["routes"],
     ]
     for folder in folders:
         os.makedirs(os.path.join(target_dir, folder), exist_ok=True)
 
-    # 1. routes/web.ngpk
-    web_routes = """# Web routes for Larapak
+    # 1. Routes (web.ngpk & api.ngpk)
+    web_routes = f"""# Web routes for Larapak ({lang})
 
 rute.get("/", "HomeController@index")
 """
-    with open(os.path.join(target_dir, "routes/web.ngpk"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["routes"], "web.ngpk"), "w", encoding="utf-8") as f:
         f.write(web_routes)
 
-    # 2. routes/api.ngpk
-    api_routes = """# API routes for Larapak
+    api_routes = f"""# API routes for Larapak ({lang})
 
 rute.get("/status", gawe(req, res)
-    balekna res.json(["status": "bener", "app": "Larapak", "author": "Ilham Hatta Manggala"])
+    balekna res.json(["status": "bener", "app": "Larapak", "bahasa": "{lang}", "author": "Ilham Hatta Manggala"])
 rampung)
 """
-    with open(os.path.join(target_dir, "routes/api.ngpk"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["routes"], "api.ngpk"), "w", encoding="utf-8") as f:
         f.write(api_routes)
 
-    # 3. app/Controllers/HomeController.ngpk
+    # 2. HomeController.ngpk
     home_controller = f"""# HomeController for {project_name}
 
 gawe index(req, res)
     balekna res.view("index", ["title": "{project_name}"])
 rampung
 """
-    with open(os.path.join(target_dir, "app/Controllers/HomeController.ngpk"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["controllers"], "HomeController.ngpk"), "w", encoding="utf-8") as f:
         f.write(home_controller)
 
-    # 4. Self-contained embedded assets from framework.assets
+    # 3. Views
     import base64
     from framework.assets import LOGO_BASE64, LAYOUT_TEMPLATE, INDEX_TEMPLATE, STYLE_CSS
 
-    # resources/views/layout.nview
-    with open(os.path.join(target_dir, "resources/views/layout.nview"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["views"], "layout.nview"), "w", encoding="utf-8") as f:
         f.write(LAYOUT_TEMPLATE)
 
-    # resources/views/index.nview
-    with open(os.path.join(target_dir, "resources/views/index.nview"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["views"], "index.nview"), "w", encoding="utf-8") as f:
         f.write(INDEX_TEMPLATE)
 
-    # 5. public/ assets (CSS, images, favicon)
-    os.makedirs(os.path.join(target_dir, "public/images"), exist_ok=True)
-    os.makedirs(os.path.join(target_dir, "public/css"), exist_ok=True)
-    os.makedirs(os.path.join(target_dir, "public/js"), exist_ok=True)
-
-    # Decode and save brand logo & favicons reliably
+    # 4. Public assets (logo, favicon, CSS)
     logo_bytes = base64.b64decode(LOGO_BASE64)
-    with open(os.path.join(target_dir, "public/images/logo.png"), "wb") as f:
+    with open(os.path.join(target_dir, paths["public_images"], "logo.png"), "wb") as f:
         f.write(logo_bytes)
-    with open(os.path.join(target_dir, "public/favicon.png"), "wb") as f:
+    with open(os.path.join(target_dir, paths["public"], "favicon.png"), "wb") as f:
         f.write(logo_bytes)
-    with open(os.path.join(target_dir, "public/favicon.ico"), "wb") as f:
+    with open(os.path.join(target_dir, paths["public"], "favicon.ico"), "wb") as f:
         f.write(logo_bytes)
 
-    # Save CSS stylesheet
-    with open(os.path.join(target_dir, "public/css/style.css"), "w", encoding="utf-8") as f:
+    with open(os.path.join(target_dir, paths["public_css"], "style.css"), "w", encoding="utf-8") as f:
         f.write(STYLE_CSS)
 
-    # 7. .env and .env.example
+    # 5. .env and .env.example
     env_content = f"""APP_NAME={project_name}
 APP_ENV=local
 APP_DEBUG=bener
 APP_PORT=8000
 APP_KEY=secret_{project_name}_key_2026
+APP_LANG={lang}
 
 DB_CONNECTION=sqlite
 DB_DATABASE=database.sqlite
@@ -383,13 +421,23 @@ DB_DEBUG=salah
     with open(os.path.join(target_dir, ".env.example"), "w", encoding="utf-8") as f:
         f.write(env_content)
 
-    # 8. README.md
+    # 6. README.md
+    if lang == "ngapak":
+        readme_desc = "Proyek aplikasi web Larapak sing digawe nganggo struktur dialek Ngapak."
+        step_text = "Langkah sabanjure:"
+    elif lang == "indonesia":
+        readme_desc = "Proyek aplikasi web Larapak dengan struktur direktori Bahasa Indonesia."
+        step_text = "Langkah selanjutnya:"
+    else:
+        readme_desc = "Larapak web application project built with NgapakIn language."
+        step_text = "Next steps:"
+
     readme_content = f"""# {project_name}
 
-Proyek aplikasi web Larapak sing digawe nganggo bahasa NgapakIn.
+{readme_desc}
 
-## Cara Mlaku
-1. Pindah ing folder proyek:
+## Cara Menjalankan
+1. Masuk ke direktori proyek:
    ```bash
    cd {project_name}
    ```
@@ -397,13 +445,13 @@ Proyek aplikasi web Larapak sing digawe nganggo bahasa NgapakIn.
    ```bash
    ngapakin serve 8000
    ```
-3. Bukak browser ing `http://localhost:8000`.
+3. Buka peramban di `http://localhost:8000`.
 """
     with open(os.path.join(target_dir, "README.md"), "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print(f"\nProyek '{project_name}' kasil digawe kanthi resik tanpa sampah engine!")
-    print("\nLangkah sabanjure:")
+    print(f"\nProyek '{project_name}' kasil digawe kanthi resik tanpa sampah engine! [Basa: {lang}]")
+    print(f"\n{step_text}")
     print(f"  cd {project_name}")
     print("  ngapakin serve\n")
 
@@ -416,10 +464,36 @@ def main():
 
     if command == "new":
         if len(sys.argv) < 3:
-            print("Error: Diharapkan nama proyek. Contoh: python ngapakin.py new toko-online")
+            print("Error: Diharapkan nama proyek. Contoh: python ngapakin.py new toko-online [--bahasa=ngapak|indonesia|english]")
             sys.exit(1)
-        project_name = sys.argv[2]
-        create_new_project(project_name)
+
+        args = sys.argv[2:]
+        project_name = None
+        language = "english"
+        i = 0
+        while i < len(args):
+            arg = args[i]
+            if arg.startswith("--bahasa="):
+                language = arg.split("=", 1)[1]
+            elif arg.startswith("--lang="):
+                language = arg.split("=", 1)[1]
+            elif arg.startswith("--language="):
+                language = arg.split("=", 1)[1]
+            elif arg.startswith("-b="):
+                language = arg.split("=", 1)[1]
+            elif arg in ("-b", "--bahasa", "--lang", "--language"):
+                if i + 1 < len(args):
+                    language = args[i + 1]
+                    i += 1
+            elif not arg.startswith("-") and project_name is None:
+                project_name = arg
+            i += 1
+
+        if not project_name:
+            print("Error: Diharapkan nama proyek. Contoh: python ngapakin.py new toko-online [--bahasa=ngapak|indonesia|english]")
+            sys.exit(1)
+
+        create_new_project(project_name, language)
 
     elif command == "compile":
         if len(sys.argv) < 3:
@@ -490,13 +564,21 @@ def main():
         print("=== Selesai Penelusuran VM ===")
 
     elif command == "serve":
-        port = 8000
-        if len(sys.argv) > 2:
+        host = None
+        port = None
+        if len(sys.argv) == 3:
+            arg = sys.argv[2]
+            if arg.isdigit():
+                port = int(arg)
+            else:
+                host = arg
+        elif len(sys.argv) >= 4:
+            host = sys.argv[2]
             try:
-                port = int(sys.argv[2])
+                port = int(sys.argv[3])
             except ValueError:
                 pass
-        run_server(port)
+        run_server(host=host, port=port)
 
     elif command == "route:list":
         router = get_router()
@@ -515,8 +597,10 @@ def main():
         if not name.endswith("Controller"):
             name += "Controller"
             
-        os.makedirs("app/Controllers", exist_ok=True)
-        filepath = os.path.join("app/Controllers", f"{name}.ngpk")
+        from framework.paths import get_controllers_path
+        controllers_dir = get_controllers_path()
+        os.makedirs(controllers_dir, exist_ok=True)
+        filepath = os.path.join(controllers_dir, f"{name}.ngpk")
         if os.path.exists(filepath):
             print(f"Error: Controller '{name}' sudah ada di '{filepath}'")
             sys.exit(1)
@@ -539,8 +623,10 @@ rampung
         if not name.endswith("Middleware"):
             name += "Middleware"
             
-        os.makedirs("app/Middleware", exist_ok=True)
-        filepath = os.path.join("app/Middleware", f"{name}.ngpk")
+        from framework.paths import get_middleware_path
+        middleware_dir = get_middleware_path()
+        os.makedirs(middleware_dir, exist_ok=True)
+        filepath = os.path.join(middleware_dir, f"{name}.ngpk")
         if os.path.exists(filepath):
             print(f"Error: Middleware '{name}' sudah ada di '{filepath}'")
             sys.exit(1)
@@ -561,8 +647,10 @@ rampung
             print("Error: Diharapkan nama model")
             sys.exit(1)
         name = sys.argv[2]
-        os.makedirs("app/Models", exist_ok=True)
-        filepath = os.path.join("app/Models", f"{name}.ngpk")
+        from framework.paths import get_models_path
+        models_dir = get_models_path()
+        os.makedirs(models_dir, exist_ok=True)
+        filepath = os.path.join(models_dir, f"{name}.ngpk")
         if os.path.exists(filepath):
             print(f"Error: Model '{name}' sudah ada di '{filepath}'")
             sys.exit(1)
@@ -586,8 +674,10 @@ rampung
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
         filename = f"{timestamp}_{name}"
-        os.makedirs("database/migrations", exist_ok=True)
-        filepath = os.path.join("database/migrations", f"{filename}.ngpk")
+        from framework.paths import get_migrations_path
+        migrations_dir = get_migrations_path()
+        os.makedirs(migrations_dir, exist_ok=True)
+        filepath = os.path.join(migrations_dir, f"{filename}.ngpk")
         
         table_name = "tabel_baru"
         if "create_" in name and "_table" in name:
@@ -621,7 +711,8 @@ rampung
         batch_row = db_manager.execute("SELECT MAX(batch) as max_batch FROM migrations").fetchone()
         current_batch = (batch_row["max_batch"] or 0) + 1
         
-        migrations_dir = "database/migrations"
+        from framework.paths import get_migrations_path
+        migrations_dir = get_migrations_path()
         if not os.path.exists(migrations_dir):
             print("Tidak ada berkas migrasi untuk dijalankan.")
             sys.exit(0)
@@ -652,7 +743,8 @@ rampung
             
         rows = db_manager.execute("SELECT migration FROM migrations WHERE batch = ? ORDER BY id DESC", [max_batch]).fetchall()
         
-        migrations_dir = "database/migrations"
+        from framework.paths import get_migrations_path
+        migrations_dir = get_migrations_path()
         for row in rows:
             migration_name = row["migration"]
             print(f"Mematikan (rollback) migrasi: {migration_name}...")
@@ -666,7 +758,8 @@ rampung
             print(f"Rollback sukses: {migration_name}")
 
     elif command == "db:seed":
-        seeder_file = "database/seeders/DatabaseSeeder.ngpk"
+        from framework.paths import get_seeder_file
+        seeder_file = get_seeder_file()
         if not os.path.exists(seeder_file):
             print(f"Error: Berkas seeder '{seeder_file}' tidak ditemukan.")
             sys.exit(1)
@@ -692,8 +785,10 @@ rampung
         if not name.endswith("Job"):
             name += "Job"
             
-        os.makedirs("app/Jobs", exist_ok=True)
-        filepath = os.path.join("app/Jobs", f"{name}.ngpk")
+        from framework.paths import get_jobs_path
+        jobs_dir = get_jobs_path()
+        os.makedirs(jobs_dir, exist_ok=True)
+        filepath = os.path.join(jobs_dir, f"{name}.ngpk")
         if os.path.exists(filepath):
             print(f"Error: Job '{name}' sudah ada di '{filepath}'")
             sys.exit(1)

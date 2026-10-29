@@ -23,22 +23,27 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
    - Tipe data lengkap: Angka, Teks, List/Array, Dictionary, Boolean (`bener`/`salah`), dan Null (`kosong`).
    - Stack-based Virtual Machine (VM) efisien dengan eksekusi bytecode cepat.
 2. **Larapak MVC Framework**:
-   - Web Server berbasis standard library HTTP.
-   - Dynamic routing (`routes/web.ngpk`, `routes/api.ngpk`) dengan middleware pipeline.
+   - Web Server: Multi-threaded development server (`ngapakin serve [host] [port]`) dan production WSGI adapter (`framework.wsgi:app` untuk Gunicorn/uWSGI).
+   - Dynamic routing (`routes/web.ngpk`, `routes/api.ngpk`) dengan middleware pipeline, route group, dan HTTP method spoofing (`_method=PUT/PATCH/DELETE`).
+   - Proteksi CSRF otomatis pada semua request state-changing (POST, PUT, PATCH, DELETE) dengan token terikat sesi dan dukungan header `X-CSRF-TOKEN`.
+   - Parser request modern yang mendukung JSON, form URL-encoded, dan `multipart/form-data` dengan perlindungan path traversal serta sanitasi berkas aman.
    - Template engine dengan layouting (`@layout`, `@sekat`, `@mlebui`), proteksi `@csrf`, penanganan error `@kleru`, serta auto-escaping `{{ }}` dan raw `{!! !!}`.
    - Serving aset statis (`public/css`, gambar, dsb).
 3. **Database dan ORM System**:
+   - Database Driver Abstraction: Driver default SQLite dengan WAL mode + busy timeout, serta dukungan penuh untuk **MySQL** (`pymysql`) dan **PostgreSQL** (`psycopg2`).
    - Kelas berorientasi objek (`kelas ... extends Model`).
-   - Fluent SQL Query Builder berbasis SQLite.
+   - Fluent SQL Query Builder berbasis parameterized query aman di seluruh database driver.
+   - ORM Eager Loading: Pengambilan relasi secara batch (`Model.with_("relasi").kabeh()`) untuk mengeliminasi masalah N+1 queries.
    - Skema Migrasi (`schema.gawe`, `schema.buang`) dan CLI migration engine.
    - Mode hening query log terintegrasi, dapat diaktifkan kembali melalui `DB_DEBUG=bener`.
-4. **Layanan Lanjutan**:
-   - **Autentikasi**: Fitur `auth` bawaan (`mlebu`, `metu`, `user`, `cek`).
-   - **Sesi dan Cookies**: Penyimpanan sesi berbasis SQLite dengan helper cookie HTTP.
+4. **Layanan Lanjutan & Hardening**:
+   - **Autentikasi & Hashing**: Hashing adaptif berbasis **Argon2id** / **PBKDF2-SHA256** dengan verifikasi constant-time dan migrasi otomatis dari password lama.
+   - **Isolasi Penyimpanan (Anti-Locking)**: Pemisahan penyimpanan Sesi, Cache, dan Queue ke berkas database independen untuk mencegah error `database is locked`.
+   - **Sesi dan Cookies**: Penyimpanan sesi independen dengan cookie HTTP aman (`HttpOnly`, `SameSite=Lax`, `Secure`).
    - **Validasi**: Validator input dengan aturan `required`, `email`, `numeric`, `min`, `max`.
-   - **Cache**: Penyimpanan data sementara berbasis SQLite dengan waktu kedaluwarsa (TTL).
+   - **Cache**: Driver SQLite dengan TTL otomatis dan dukungan opsional backend **Redis**.
    - **Event dan Listener**: Dispatcher event bawaan untuk pemrograman reaktif.
-   - **Job Queues**: Pemrosesan latar belakang (background queue workers) dengan `queue:work`.
+   - **Job Queues**: Pemrosesan latar belakang atomic (`queue:work`) dengan dukungan SQLite non-blocking dan opsi **Redis**.
    - **Package Manager**: Pemasangan paket otomatis beserta auto-discovery Service Provider.
    - **REPL Terminal**: Terminal interaktif via `ngapakin repl`.
    - **Step Debugger**: Breakpoint debugger interaktif (`s` step, `c` continue, `l` locals, `g` globals).
@@ -94,9 +99,9 @@ ngapakin serve [port]                 # Menjalankan server web lokal (default: 8
 ngapakin route:list                   # Menampilkan daftar seluruh rute aktif
 
 # Scaffolding Komponen Baru
-ngapakin new <NamaProyek>             # Membuat proyek web Larapak baru
-ngapakin make:controller <Nama>       # Membuat controller baru di app/Controllers
-ngapakin make:model <Nama>            # Membuat model ORM baru di app/Models
+ngapakin new <NamaProyek> [--bahasa=ngapak|indonesia|english]  # Membuat proyek web Larapak baru (pilihan bahasa folder)
+ngapakin make:controller <Nama>       # Membuat controller baru (otomatis menyesuaikan struktur proyek)
+ngapakin make:model <Nama>            # Membuat model ORM baru (otomatis menyesuaikan struktur proyek)
 ngapakin make:middleware <Nama>       # Membuat middleware di app/Middleware
 ngapakin make:migration <Nama>        # Membuat berkas migrasi database
 ngapakin make:job <Nama>              # Membuat background job di app/Jobs
@@ -190,6 +195,53 @@ event.dispatch("user.registered", 99)
 
 # Antrean Pekerjaan Latar Belakang (Queue Job)
 queue.push("SendEmailJob", ["pesan": "Halo Selamat Datang!"])
+```
+
+### 4. ORM Eager Loading (Eliminasi N+1 Queries)
+```ngapak
+# Mengambil seluruh pengguna beserta postingannya hanya dalam 2 query SQL teroptimasi:
+pengguna = User.with_("postingan").kabeh()
+
+baleni u neng pengguna ya
+    tulis "User: " + u.name
+    baleni p neng u.postingan() ya
+        tulis " - Judul: " + p.judul
+    rampung
+rampung
+```
+
+### 5. Password Hashing
+```ngapak
+# Hashing password adaptif (Argon2id / PBKDF2)
+hash_pass = hash.hash_password("KunciRahasia2026")
+
+# Verifikasi aman dengan proteksi timing attack
+cocok = hash.verify_password("KunciRahasia2026", hash_pass)
+```
+
+### 6. File Upload dan Form Method Spoofing
+```html
+<!-- Form upload dengan proteksi CSRF dan spoofing method PUT -->
+<form action="/profil/foto" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="hidden" name="_method" value="PUT">
+    <input type="file" name="avatar">
+    <button type="submit">Unggah Foto</button>
+</form>
+```
+
+```python
+# Controller penanganan unggahan berkas (app/Controllers/ProfilController.py / .ngpk)
+# Berkas otomatis disanitasi dan dilindungi dari path traversal
+gawe simpen_avatar(req, res)
+    nek req.has_file("avatar") ya
+        berkas = req.file("avatar")
+        lokasi = berkas.save("storage/uploads/avatars")
+        balekna res.html("<p>Foto berhasil disimpan di: " + lokasi + "</p>")
+    liyane
+        balekna res.html("<p>Tidak ada berkas yang dipilih.</p>")
+    rampung
+rampung
 ```
 
 ---

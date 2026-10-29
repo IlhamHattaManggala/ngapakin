@@ -37,8 +37,9 @@ class Response:
         context = context or {}
         from framework.template_engine import TemplateEngine
         
-        # Retrieve view template from resources/views
-        views_path = os.path.abspath("resources/views")
+        # Retrieve view template from active views directory
+        from framework.paths import get_views_path
+        views_path = os.path.abspath(get_views_path())
         engine = TemplateEngine(views_path, Response.active_vm)
         
         html_content = engine.render(name, context)

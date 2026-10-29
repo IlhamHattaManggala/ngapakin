@@ -1,91 +1,120 @@
-# Panduan Deploy Larapak Web Framework 🌐
+# Panduan Deployment Larapak Web Framework 🌐
 
-Dokumen ini menjelaskan langkah-langkah untuk melakukan deployment aplikasi web berbasis Larapak / NgapakIn ke internet agar dapat diakses oleh publik.
-
----
-
-## 📌 Metode 1: Menggunakan PaaS (Render / Railway) - REKOMENDASI ⭐
-
-Metode ini adalah yang termudah karena terintegrasi langsung dengan repositori GitHub Anda (auto-deploy saat push) dan menangani HTTPS (SSL) secara otomatis secara gratis.
-
-### Langkah-langkah di Render.com:
-1. Daftar atau masuk ke **[Render](https://render.com/)**.
-2. Klik tombol **New +** dan pilih **Web Service**.
-3. Hubungkan akun GitHub Anda dan pilih repositori `ngapakin`.
-4. Konfigurasikan detail web service berikut:
-   - **Name**: `ngapakin-app` (atau nama pilihan Anda)
-   - **Environment/Runtime**: `Python`
-   - **Build Command**: `pip install -e .` (untuk memasang CLI secara lokal)
-   - **Start Command**: `python ngapakin.py serve $PORT`
-5. Klik **Create Web Service**.
-
-> [!NOTE]
-> Larapak secara otomatis membaca `$PORT` yang disediakan oleh Render melalui argumen terminal saat server dijalankan.
+Dokumen ini menjelaskan langkah-langkah untuk melakukan deployment aplikasi web berbasis Larapak / NgapakIn ke lingkungan produksi menggunakan standar industri Python WSGI (Gunicorn / uWSGI) maupun server development lokal.
 
 ---
 
-## 📌 Metode 2: Menggunakan VPS Linux (Ubuntu 20.04/22.04)
+## 📌 Ringkasan Mode Server
 
-Untuk performa penuh dan kontrol database SQLite yang lebih baik, Anda bisa menggunakan VPS seperti AWS, DigitalOcean, atau Linode.
+| Mode | Entrypoint / Perintah | Karakteristik | Target Penggunaan |
+|---|---|---|---|
+| **Development Server** | `python ngapakin.py serve [host] [port]` | Multi-threaded HTTP server bawaan Python, auto-reload & debugging ramah lokal | Pengembangan lokal (Local Dev) |
+| **Production WSGI** | `gunicorn "framework.wsgi:app"` | Multi-worker process pooling, robust isolation, high-throughput | Lingkungan Produksi (VPS, Docker, Cloud) |
 
-### 1. Persiapan Awal
-Masuk ke VPS Anda melalui SSH, perbarui sistem, dan kloning repositori:
+---
+
+## 📌 Metode 1: Production Deployment Menggunakan WSGI & Gunicorn (Rekomendasi Produksi)
+
+Larapak menyediakan adapter WSGI standar di `framework.wsgi:app` yang sepenuhnya kompatibel dengan server WSGI modern seperti Gunicorn dan uWSGI.
+
+### 1. Pemasangan Dependency Produksi
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3 python3-pip python3-venv git nginx -y
+pip install gunicorn
+# Atau pasang bundle dependensi produksi:
+pip install "ngapakin[production]"
+```
+
+### 2. Menjalankan Gunicorn
+Jalankan aplikasi dengan worker proses terisolasi:
+```bash
+# Menjalankan dengan 4 worker pada port 8000
+gunicorn --workers 4 --bind 0.0.0.0:8000 "framework.wsgi:app"
+```
+
+Untuk menentukan jumlah worker yang optimal, gunakan formula standar: `(2 x CPU Cores) + 1`.
+
+---
+
+## 📌 Metode 2: Deployment VPS Linux (Ubuntu / Debian) dengan Systemd & Nginx
+
+### 1. Persiapan Direktori & Virtualenv
+```bash
+sudo apt update && sudo apt install python3 python3-pip python3-venv git nginx -y
 
 # Clone repositori
 git clone https://github.com/IlhamHattaManggala/ngapakin.git /var/www/ngapakin
 cd /var/www/ngapakin
 
-# Inisialisasi database migrasi & seeder
+# Buat virtual environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -e ".[production,all]"
+
+# Jalankan migrasi database
 python3 ngapakin.py migrate
-python3 ngapakin.py db:seed
 ```
 
-### 2. Konfigurasi Systemd Service (Agar berjalan di latar belakang)
-Buat berkas service systemd baru agar Larapak tetap menyala walaupun sesi terminal ditutup, dan otomatis menyala kembali jika VPS reboot:
-
+### 2. Konfigurasi Systemd Service untuk Gunicorn
+Buat berkas service systemd:
 ```bash
 sudo nano /etc/systemd/system/larapak.service
 ```
 
-Masukkan konfigurasi berikut:
+Isi berkas service:
 ```ini
 [Unit]
-Description=Larapak Web Server Application
+Description=Larapak WSGI Gunicorn Application Server
 After=network.target
 
 [Service]
 User=www-data
+Group=www-data
 WorkingDirectory=/var/www/ngapakin
-ExecStart=/usr/bin/python3 ngapakin.py serve 8000
+Environment="PATH=/var/www/ngapakin/venv/bin"
+EnvironmentFile=/var/www/ngapakin/.env
+ExecStart=/var/www/ngapakin/venv/bin/gunicorn \
+    --workers 4 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile /var/log/larapak/access.log \
+    --error-logfile /var/log/larapak/error.log \
+    "framework.wsgi:app"
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Aktifkan dan jalankan service:
+Buat direktori log dan aktifkan service:
 ```bash
+sudo mkdir -p /var/log/larapak && sudo chown -R www-data:www-data /var/log/larapak
+sudo systemctl daemon-reload
 sudo systemctl enable larapak
 sudo systemctl start larapak
-# Periksa status
 sudo systemctl status larapak
 ```
 
-### 3. Konfigurasi Nginx sebagai Reverse Proxy & SSL
-Buka konfigurasi server block Nginx default:
+### 3. Konfigurasi Nginx sebagai Reverse Proxy & Static File Server
+Buka konfigurasi Nginx:
 ```bash
-sudo nano /etc/nginx/sites-available/default
+sudo nano /etc/nginx/sites-available/larapak
 ```
 
-Ganti isinya menjadi konfigurasi reverse proxy yang mengarah ke port `8000`:
+Isi konfigurasi:
 ```nginx
 server {
     listen 80;
     server_name domain_anda.com www.domain_anda.com;
 
+    client_max_body_size 20M;
+
+    # Melayani aset statis langsung melalui Nginx
+    location /static/ {
+        alias /var/www/ngapakin/public/;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Reverse proxy ke Gunicorn WSGI
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -96,25 +125,25 @@ server {
 }
 ```
 
-Uji konfigurasi dan muat ulang Nginx:
+Aktifkan konfigurasi Nginx dan pasang SSL via Certbot:
 ```bash
+sudo ln -s /etc/nginx/sites-available/larapak /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
-```
 
-### 4. Mengaktifkan SSL Gratis (Let's Encrypt)
-Gunakan Certbot untuk mengamankan koneksi (HTTPS) secara gratis:
-```bash
+# Pasang SSL gratis (Let's Encrypt)
 sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d domain_anda.com -d www.domain_anda.com
 ```
-Ikuti instruksi di layar, dan Certbot akan otomatis mengonfigurasi SSL pada Nginx Anda!
 
 ---
 
-## 💾 Manajemen Database SQLite saat Production
-Karena Larapak menggunakan SQLite (`database.sqlite`), pastikan berkas database memiliki izin akses yang tepat agar server web (`www-data`) dapat melakukan operasi penulisan (write):
-```bash
-sudo chown -R www-data:www-data /var/www/ngapakin
-sudo chmod -R 775 /var/www/ngapakin/database
-```
+## 📌 Metode 3: PaaS (Render / Railway / Fly.io)
+
+### Pengaturan di Render:
+1. Hubungkan repositori GitHub Anda di **[Render](https://render.com/)**.
+2. Konfigurasi:
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -e ".[production]"`
+   - **Start Command**: `gunicorn --bind 0.0.0.0:$PORT "framework.wsgi:app"`
+3. Tambahkan environment variables sesuai kebutuhan (`APP_ENV=production`, `APP_KEY=...`).

@@ -18,6 +18,9 @@ class Router:
     def put(self, path, action):
         self.add_route("PUT", path, action)
 
+    def patch(self, path, action):
+        self.add_route("PATCH", path, action)
+
     def delete(self, path, action):
         self.add_route("DELETE", path, action)
 

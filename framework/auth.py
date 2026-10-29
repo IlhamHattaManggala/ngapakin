@@ -36,18 +36,33 @@ class Auth:
         return self.cek()
 
     def mlebu(self, email, password):
-        """Login user with email and password."""
+        """Login user with email and password securely."""
         if self.vm and "User" in self.vm.globals:
             User = self.vm.globals["User"]
             from framework.model import Model
-            # Query user using ModelQueryBuilder
-            # We will make sure Model.nek works and returns a user.
-            # Or we can query directly via SQL for safety inside auth:
+            from framework.hashing import Hash
+            
             table = Model.get_table_name(User)
             row = db_manager.execute(f"SELECT * FROM {table} WHERE email = ?", [email]).fetchone()
             if row:
                 user_dict = dict(row)
-                if user_dict.get("password") == password:
+                stored_pass = str(user_dict.get("password") or "")
+                
+                # Constant-time verification supporting encoded hash and legacy plain-text
+                if Hash.verify_password(password, stored_pass):
+                    # Safely migrate legacy/outdated password to new secure hash
+                    if Hash.needs_rehash(stored_pass):
+                        try:
+                            new_hash = Hash.hash_password(password)
+                            db_manager.execute_write(
+                                f"UPDATE {table} SET password = ? WHERE id = ?",
+                                [new_hash, user_dict.get("id")]
+                            )
+                            user_dict["password"] = new_hash
+                        except Exception:
+                            # Do not break authentication if rehash write fails
+                            pass
+
                     ses = self.sesi
                     if ses:
                         ses.set("auth_user_id", user_dict.get("id"))

@@ -124,11 +124,11 @@ class TemplateEngine:
 
                 # 5. CSRF directive (@csrf)
                 elif line == "@csrf":
+                    from framework.csrf import CSRF
                     token = ""
-                    if "sesi" in self.vm.globals and hasattr(self.vm.globals["sesi"], "entuk"):
-                        token = self.vm.globals["sesi"].entuk("_token")
-                        if not token:
-                            token = getattr(self.vm.globals["sesi"], "session_id", "")
+                    if "sesi" in self.vm.globals:
+                        session_obj = self.vm.globals["sesi"]
+                        token = CSRF.token(session_obj)
                     output.append(f'<input type="hidden" name="_token" value="{token}">')
                     i += 1
                     continue
