@@ -1,5 +1,6 @@
 # PostgreSQL Database Driver for Larapak (Optional Dependency)
 
+import importlib
 from .driver import DatabaseDriver
 
 class PostgresDriver(DatabaseDriver):
@@ -14,8 +15,8 @@ class PostgresDriver(DatabaseDriver):
 
     def _get_driver_module(self):
         try:
-            import psycopg2
-            import psycopg2.extras
+            psycopg2 = importlib.import_module("psycopg2")
+            importlib.import_module("psycopg2.extras")
             return psycopg2
         except ImportError:
             raise ImportError(
@@ -27,7 +28,6 @@ class PostgresDriver(DatabaseDriver):
     def connect(self):
         if self._conn is None:
             psycopg2 = self._get_driver_module()
-            import psycopg2.extras
             try:
                 self._conn = psycopg2.connect(
                     host=self.host,

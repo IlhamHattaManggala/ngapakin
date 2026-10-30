@@ -104,6 +104,36 @@ class Model:
     def with_related(cls, *relations):
         return cls.with_(*relations)
 
+    @classmethod
+    def kaca(cls, saben_kaca=15, kaca_saiki=1):
+        table = Model.get_table_name(cls)
+        qb = ModelQueryBuilder(cls, table)
+        return qb.kaca(saben_kaca, kaca_saiki)
+
+    @classmethod
+    def paginate(cls, per_page=15, page=1):
+        return cls.kaca(per_page, page)
+
+    @classmethod
+    def lewati(cls, jumlah):
+        table = Model.get_table_name(cls)
+        qb = ModelQueryBuilder(cls, table)
+        return qb.lewati(jumlah)
+
+    @classmethod
+    def offset(cls, jumlah):
+        return cls.lewati(jumlah)
+
+    @classmethod
+    def ambil(cls, jumlah):
+        table = Model.get_table_name(cls)
+        qb = ModelQueryBuilder(cls, table)
+        return qb.ambil(jumlah)
+
+    @classmethod
+    def limit(cls, jumlah):
+        return cls.ambil(jumlah)
+
     # Instance Methods
     def simpen(self):
         cls = self.ngapak_class if isinstance(self, NgapakInstance) else self.__class__
@@ -291,6 +321,29 @@ class ModelQueryBuilder(QueryBuilder):
 
     def all(self):
         return self.kabeh()
+
+    def kaca(self, saben_kaca=15, kaca_saiki=1):
+        saben_kaca = max(1, int(saben_kaca or 15))
+        kaca_saiki = max(1, int(kaca_saiki or 1))
+
+        total = self.count()
+        kaca_pungkasan = max(1, (total + saben_kaca - 1) // saben_kaca)
+
+        self.ambil(saben_kaca).lewati((kaca_saiki - 1) * saben_kaca)
+        instances = self.kabeh()
+
+        return {
+            "data": instances,
+            "total": total,
+            "saben_kaca": saben_kaca,
+            "kaca_saiki": kaca_saiki,
+            "kaca_pungkasan": kaca_pungkasan,
+            "ana_sadurunge": kaca_saiki > 1,
+            "ana_sabanjure": kaca_saiki < kaca_pungkasan,
+        }
+
+    def paginate(self, per_page=15, page=1):
+        return self.kaca(per_page, page)
 
     def _resolve_relation_metadata(self, relation_name: str) -> RelationMetadata:
         """Inspect the model to determine relationship type and keys."""

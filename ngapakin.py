@@ -18,6 +18,8 @@ def print_usage():
     print("  python ngapakin.py make:migration <NamaMigrasi>")
     print("  python ngapakin.py make:job <NamaJob>")
     print("  python ngapakin.py migrate")
+    print("  python ngapakin.py migrate:fresh [--seed]")
+    print("  python ngapakin.py migrate:status")
     print("  python ngapakin.py rollback")
     print("  python ngapakin.py db:seed")
     print("  python ngapakin.py queue:work")
@@ -227,6 +229,27 @@ def run_server(host=None, port=None):
                 self.wfile.write(f"<h1>403 Forbidden</h1><p>{str(e)}</p>".encode("utf-8"))
                 return
 
+            # Check Larapak Route & API Studio
+            from framework.studio import is_studio_enabled, render_studio_html, generate_openapi_spec
+            norm_path = path.rstrip("/")
+            if is_studio_enabled() and (norm_path in ("/api-studio", "/api/studio") or path in ("/api-studio/openapi.json", "/api/studio/openapi.json")):
+                session.save()
+                if path.endswith("openapi.json"):
+                    import json
+                    spec = generate_openapi_spec(router)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(spec, indent=2).encode("utf-8"))
+                    return
+                else:
+                    html = render_studio_html(router, session)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(html.encode("utf-8"))
+                    return
+
             # Match Route with effective HTTP method
             route, params = router.match(req.method, path)
             if not route:
@@ -288,8 +311,9 @@ def run_server(host=None, port=None):
                 self.send_response(500)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                err_msg = f"<h1>500 Internal Server Error</h1><p>{str(e)}</p>"
-                self.wfile.write(err_msg.encode('utf-8'))
+                from framework.error_handler import render_exception
+                err_html = render_exception(e, req)
+                self.wfile.write(err_html.encode('utf-8'))
                 import traceback
                 traceback.print_exc()
             finally:
@@ -732,6 +756,77 @@ rampung
                 
         if run_count == 0:
             print("Tidak ada migrasi baru untuk dijalankan.")
+
+    elif command == "migrate:fresh":
+        from framework.database import db_manager
+        print("Menghapus seluruh tabel di database...")
+        dropped = db_manager.drop_all_tables()
+        if dropped:
+            print(f"Berhasil membersihkan tabel: {', '.join(dropped)}")
+        else:
+            print("Database sudah bersih dari tabel.")
+
+        db_manager.execute_write("CREATE TABLE IF NOT EXISTS migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, migration VARCHAR(255), batch INTEGER)")
+
+        from framework.paths import get_migrations_path
+        migrations_dir = get_migrations_path()
+        if os.path.exists(migrations_dir):
+            migration_files = sorted([f for f in os.listdir(migrations_dir) if f.endswith(".ngpk")])
+            for f in migration_files:
+                migration_name = f[:-5]
+                print(f"Menjalankan migrasi: {migration_name}...")
+                filepath = os.path.join(migrations_dir, f)
+                run_migration_file(filepath, "munggah")
+                db_manager.execute_write("INSERT INTO migrations (migration, batch) VALUES (?, ?)", [migration_name, 1])
+                print(f"Migrasi sukses: {migration_name}")
+
+        print("Migrasi fresh selesai dengan sukses!")
+
+        if "--seed" in sys.argv:
+            from framework.paths import get_seeder_file
+            seeder_file = get_seeder_file()
+            if os.path.exists(seeder_file):
+                print("\nMenjalankan seeder database...")
+                vm = create_vm()
+                with open(seeder_file, "r", encoding="utf-8") as f:
+                    source = f.read()
+                lexer = Lexer(source, seeder_file)
+                tokens = lexer.tokenize()
+                parser = Parser(tokens, seeder_file)
+                ast = parser.parse()
+                compiler = Compiler(seeder_file)
+                main_fn = compiler.compile(ast)
+                vm.execute_callable(main_fn, [])
+                print("Database berhasil di-seed!")
+
+    elif command == "migrate:status":
+        from framework.database import db_manager
+        db_manager.execute_write("CREATE TABLE IF NOT EXISTS migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, migration VARCHAR(255), batch INTEGER)")
+        rows = db_manager.execute("SELECT migration, batch FROM migrations").fetchall()
+        executed_map = {row["migration"]: row["batch"] for row in rows}
+
+        from framework.paths import get_migrations_path
+        migrations_dir = get_migrations_path()
+        migration_files = []
+        if os.path.exists(migrations_dir):
+            migration_files = sorted([f for f in os.listdir(migrations_dir) if f.endswith(".ngpk")])
+
+        print(f"\n+--------+------------------------------------------------------+---------+")
+        print(f"| Ran?   | Migration File                                       | Batch   |")
+        print(f"+--------+------------------------------------------------------+---------+")
+        if not migration_files:
+            print(f"| (kosong) Tidak ada berkas migrasi ditemukan.                            |")
+        else:
+            for f in migration_files:
+                name = f[:-5]
+                if name in executed_map:
+                    ran_badge = "Yes"
+                    batch_str = f"Batch {executed_map[name]}"
+                else:
+                    ran_badge = "No"
+                    batch_str = "Pending"
+                print(f"| {ran_badge:<6} | {name:<52} | {batch_str:<7} |")
+        print(f"+--------+------------------------------------------------------+---------+\n")
 
     elif command == "rollback":
         from framework.database import db_manager

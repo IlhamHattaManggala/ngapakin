@@ -26,6 +26,8 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
    - Web Server: Multi-threaded development server (`ngapakin serve [host] [port]`) dan production WSGI adapter (`framework.wsgi:app` untuk Gunicorn/uWSGI).
    - Dynamic routing (`routes/web.ngpk`, `routes/api.ngpk`) dengan middleware pipeline, route group, dan HTTP method spoofing (`_method=PUT/PATCH/DELETE`).
    - Proteksi CSRF otomatis pada semua request state-changing (POST, PUT, PATCH, DELETE) dengan token terikat sesi dan dukungan header `X-CSRF-TOKEN`.
+   - Rate Limiting / Throttle Middleware bawaan (`throttle:60,1`) dengan header standar (`Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`).
+   - Halaman Error Interaktif Modern (Ignition style) saat `APP_DEBUG=bener` dengan cuplikan berkas, call stack, dan tab request/environment; serta halaman 500 aman anti-bocor di mode produksi.
    - Parser request modern yang mendukung JSON, form URL-encoded, dan `multipart/form-data` dengan perlindungan path traversal serta sanitasi berkas aman.
    - Template engine dengan layouting (`@layout`, `@sekat`, `@mlebui`), proteksi `@csrf`, penanganan error `@kleru`, serta auto-escaping `{{ }}` dan raw `{!! !!}`.
    - Serving aset statis (`public/css`, gambar, dsb).
@@ -34,7 +36,8 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
    - Kelas berorientasi objek (`kelas ... extends Model`).
    - Fluent SQL Query Builder berbasis parameterized query aman di seluruh database driver.
    - ORM Eager Loading: Pengambilan relasi secara batch (`Model.with_("relasi").kabeh()`) untuk mengeliminasi masalah N+1 queries.
-   - Skema Migrasi (`schema.gawe`, `schema.buang`) dan CLI migration engine.
+   - Pagination & Offset Otomatis: `Model.kaca(10)` / `paginate(10)` dan `Model.lewati(10)` / `offset(10)`.
+   - Skema Migrasi (`schema.gawe`, `schema.buang`) dan CLI migration engine lengkap (`migrate`, `migrate:fresh [--seed]`, `migrate:status`, `rollback`).
    - Mode hening query log terintegrasi, dapat diaktifkan kembali melalui `DB_DEBUG=bener`.
 4. **Layanan Lanjutan & Hardening**:
    - **Autentikasi & Hashing**: Hashing adaptif berbasis **Argon2id** / **PBKDF2-SHA256** dengan verifikasi constant-time dan migrasi otomatis dari password lama.
@@ -108,6 +111,8 @@ ngapakin make:job <Nama>              # Membuat background job di app/Jobs
 
 # Database dan Migrasi
 ngapakin migrate                      # Menjalankan seluruh migrasi tertunda
+ngapakin migrate:fresh [--seed]       # Membersihkan database dan menjalankan ulang semua migrasi
+ngapakin migrate:status               # Menampilkan status eksekusi seluruh berkas migrasi
 ngapakin rollback                     # Membatalkan migrasi batch terakhir
 ngapakin db:seed                      # Menjalankan berkas seeder database
 
@@ -244,6 +249,58 @@ gawe simpen_avatar(req, res)
 rampung
 ```
 
+### 5. Pagination & Offset di Model / ORM
+```ngapak
+# Mengambil data produk per halaman (10 data per halaman, halaman 1)
+kaca_produk = Product.kaca(10, 1)
+
+# Mengakses data dan informasi pagination
+produk_list = kaca_produk["data"]
+total_data = kaca_produk["total"]
+kaca_pungkasan = kaca_produk["kaca_pungkasan"]
+
+# Offset manual (ambil 5 data lewati 10 data pertama)
+data_pilihan = Product.ambil(5).lewati(10).kabeh()
+```
+
+### 6. Rate Limiting / Throttle Middleware
+```ngapak
+# Batasi maksimal 60 request per 1 menit pada rute tertentu
+rute.group(["middleware": "throttle:60,1"], gawe()
+    rute.get("/api/data", "ApiController@data")
+rampung)
+```
+
+---
+
+## Developer Error Debugger (Ignition Style)
+
+Larapak dilengkapi dengan debugger visual interaktif bertenaga tinggi saat `APP_DEBUG=bener`:
+- **StackTrace & Cuplikan Kode**: Menampilkan sorotan baris kode error pada berkas terkait.
+- **Panyuwunan (Request)**: Memeriksa HTTP Method, Parameter URL, Header, Body, dan Cookie secara detail.
+- **Lingkungan (Environment)**: Memeriksa versi runtime Larapak, Python, driver database, serta status cache.
+- **Mode Produksi (`APP_DEBUG=salah`)**: Menampilkan halaman 500 error yang elegan, aman, dan tanpa membocorkan trace sensitif ke publik.
+
+---
+
+## Larapak Route & API Studio (`/api-studio`)
+
+Larapak dilengkapi studio dokumentasi rute dan pengujian interaktif otomatis (gabungan Swagger UI + Live Route Explorer) yang dapat diakses di:
+```text
+http://localhost:8000/api-studio  (atau http://localhost:8000/api/studio)
+```
+
+- **Auto Route Discovery**: Memetakan seluruh rute aplikasi, parameter URL dinamis (`{id}`), dan middleware secara instan tanpa konfigurasi manual.
+- **Dukungan Penuh Rute View (HTML) & API (JSON)**:
+  - **Pratinjau Tampilan (Live View)**: Menampilkan renderan halaman web asli langsung di dalam isolated iframe sandbox dengan tombol responsif Desktop (100%), Tablet (768px), dan Mobile (375px).
+  - **Inspeksi Template**: Menampilkan nama berkas `.nview` yang dirender beserta kunci variabel context.
+  - **Kode Mentah (Raw)**: Syntax highlight untuk HTML atau JSON dengan tombol salin instan.
+- **Interactive Playground (Try It Out)**:
+  - Menguji request HTTP langsung dari browser dengan parameter URL dinamis, query string, dan payload body.
+  - **Auto-CSRF Injected**: Menyertakan token CSRF otomatis pada permintaan `POST`, `PUT`, `PATCH`, dan `DELETE` agar pengujian form web tidak terbentur error 403 Forbidden.
+- **Spesifikasi Standar OpenAPI 3.0**:
+  - Menyediakan endpoint `/api-studio/openapi.json` yang kompatibel dengan ekosistem Swagger, Postman, dan Insomnia.
+
 ---
 
 ## Interactive Breakpoint Debugger
@@ -260,7 +317,7 @@ Jalankan debug program menggunakan perintah `ngapakin debug <berkas.ngpk>`. Keti
 
 ## Konfigurasi Environment (.env)
 
-Larapak membaca file `.env` secara otomatis saat aplikasi dimulai. Contoh konfigurasi default:
+Larapak membaca file `.env` secara otomatis saat aplikasi dimulai. Contoh konfigurasi database yang didukung:
 
 ```ini
 APP_NAME=LarapakApp
@@ -269,8 +326,34 @@ APP_DEBUG=bener
 APP_PORT=8000
 APP_KEY=secret_key_random
 
+# 1. SQLite (Bawaan)
 DB_CONNECTION=sqlite
 DB_DATABASE=database.sqlite
+
+# 2. MySQL / MariaDB (pip install 'ngapakin[mysql]')
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=larapak_db
+# DB_USERNAME=root
+# DB_PASSWORD=rahasia
+
+# 3. PostgreSQL (pip install 'ngapakin[postgres]')
+# DB_CONNECTION=pgsql
+# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_DATABASE=larapak_db
+# DB_USERNAME=postgres
+# DB_PASSWORD=rahasia
+
+# 4. Microsoft SQL Server (pip install 'ngapakin[mssql]')
+# DB_CONNECTION=sqlsrv
+# DB_HOST=127.0.0.1
+# DB_PORT=1433
+# DB_DATABASE=larapak_db
+# DB_USERNAME=sa
+# DB_PASSWORD=rahasia
+
 DB_DEBUG=salah
 ```
 

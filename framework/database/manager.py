@@ -5,6 +5,7 @@ from .driver import DatabaseDriver
 from .sqlite_driver import SQLiteDriver
 from .mysql_driver import MySQLDriver
 from .postgres_driver import PostgresDriver
+from .sqlserver_driver import SQLServerDriver
 from framework.env import env
 
 class DatabaseConnection:
@@ -47,8 +48,17 @@ class DatabaseConnection:
                 password=self.options.get("password") or env("DB_PASSWORD", ""),
                 sslmode=self.options.get("sslmode") or env("DB_SSLMODE", "prefer")
             )
+        elif conn in ("mssql", "sqlserver", "sqlsrv"):
+            self._driver = SQLServerDriver(
+                host=self.options.get("host") or env("DB_HOST", "127.0.0.1"),
+                port=self.options.get("port") or env("DB_PORT", 1433),
+                database=self.options.get("database") or env("DB_DATABASE", ""),
+                user=self.options.get("username") or env("DB_USERNAME", "sa"),
+                password=self.options.get("password") or env("DB_PASSWORD", ""),
+                driver=self.options.get("driver") or env("DB_ODBC_DRIVER", None)
+            )
         else:
-            raise ValueError(f"Database connection '{conn}' tidak didukung. Pilihan: sqlite, mysql, pgsql.")
+            raise ValueError(f"Database connection '{conn}' tidak didukung. Pilihan: sqlite, mysql, pgsql, mssql.")
 
     @property
     def driver(self) -> DatabaseDriver:
@@ -106,6 +116,46 @@ class DatabaseConnection:
 
     def rollback(self):
         self.driver.rollback()
+
+    def drop_all_tables(self):
+        """Drop all user tables in the connected database cleanly."""
+        driver_type = self.connection_name
+        if driver_type in ("sqlite", "sqlite3"):
+            cursor = self.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            tables = [row["name"] for row in cursor.fetchall()]
+            self.execute_write("PRAGMA foreign_keys = OFF")
+            for t in tables:
+                quoted = self.quote_identifier(t)
+                self.execute_write(f"DROP TABLE IF EXISTS {quoted}")
+            self.execute_write("PRAGMA foreign_keys = ON")
+            return tables
+        elif driver_type == "mysql":
+            cursor = self.execute("SHOW TABLES")
+            tables = [list(row.values())[0] for row in cursor.fetchall()]
+            self.execute_write("SET FOREIGN_KEY_CHECKS = 0")
+            for t in tables:
+                quoted = self.quote_identifier(t)
+                self.execute_write(f"DROP TABLE IF EXISTS {quoted}")
+            self.execute_write("SET FOREIGN_KEY_CHECKS = 1")
+            return tables
+        elif driver_type in ("pgsql", "postgres", "postgresql"):
+            cursor = self.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            tables = [row["tablename"] for row in cursor.fetchall()]
+            for t in tables:
+                quoted = self.quote_identifier(t)
+                self.execute_write(f"DROP TABLE IF EXISTS {quoted} CASCADE")
+            return tables
+        elif driver_type in ("mssql", "sqlserver", "sqlsrv"):
+            cursor = self.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")
+            tables = [row["TABLE_NAME"] if "TABLE_NAME" in row else list(row.values())[0] for row in cursor.fetchall()]
+            for t in tables:
+                quoted = self.quote_identifier(t)
+                self.execute_write(f"ALTER TABLE {quoted} NOCHECK CONSTRAINT ALL")
+            for t in tables:
+                quoted = self.quote_identifier(t)
+                self.execute_write(f"DROP TABLE IF EXISTS {quoted}")
+            return tables
+        return []
 
     def close(self):
         if self._driver:

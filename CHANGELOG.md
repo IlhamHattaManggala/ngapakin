@@ -2,6 +2,35 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.0.7] - 2026-10-30
+
+### Ditambahkan
+- **Developer Error Debugger Interaktif (Ignition/Whoops Style)**:
+  - Antarmuka visual berestetika tinggi (OLED Dark Mode, Doppelrand double-bezel card, JetBrains Mono code viewer) saat `APP_DEBUG=bener`.
+  - Cuplikan baris kode kesalahan dengan sorotan marker merah menyala dan konteks 5 baris atas/bawah.
+  - Tab navigasi interaktif: `StackTrace & Berkas`, `Panyuwunan (Request)`, dan `Lingkungan (Environment)`.
+  - Halaman 500 minimalis yang aman dan anti-bocor untuk lingkungan produksi (`APP_DEBUG=salah`).
+- **CLI Migrasi Tingkat Lanjut**:
+  - `ngapakin migrate:fresh [--seed]`: Menghapus seluruh tabel dan menjalankan ulang seluruh migrasi secara bersih, dengan opsi langsung menjalankan seeder database.
+  - `ngapakin migrate:status`: Menampilkan tabel ringkasan status eksekusi seluruh berkas migrasi beserta batch nomornya.
+- **Pagination & Offset ORM/QueryBuilder**:
+  - Dukungan klausa `OFFSET` via `QueryBuilder.lewati(jumlah)` / `offset(jumlah)`.
+  - Fitur pagination otomatis via `Model.kaca(saben_kaca, kaca_saiki)` / `Model.paginate(...)` lengkap dengan metadata (`total`, `kaca_pungkasan`, `ana_sadurunge`, `ana_sabanjure`).
+- **Rate Limiting / Throttle Middleware**:
+  - Middleware pembatas request `throttle:maks_request,menit` (default 60 request per menit per IP).
+  - Integrasi header HTTP standar: `Retry-After`, `X-RateLimit-Limit`, dan `X-RateLimit-Remaining`.
+  - Dukungan respons ramah pengguna (JSON untuk API atau halaman HTML untuk browser).
+- **Dukungan Basis Data SQL Server (MSSQL)**:
+  - Driver `SQLServerDriver` baru yang mendukung koneksi via `pymssql` maupun `pyodbc` (ODBC Driver 18).
+  - Penyesuaian sintaksis identitas auto-increment (`SCOPE_IDENTITY()`), tanda kurung bracket `[tabel]`, dan pembersihan relasi saat `migrate:fresh`.
+  - Dukungan instalasi opsional via `pip install 'ngapakin[mssql]'`.
+- **Larapak Route & API Studio (`/api-studio` & `/api/studio`)**:
+  - Dokumentasi rute interaktif otomatis yang membaca seluruh endpoint, parameter dinamis (`{id}`), dan middleware tanpa konfigurasi manual.
+  - Dukungan penuh untuk rute **View (HTML)** maupun **API (JSON)** dengan tab **Pratinjau Tampilan (Live View)** via isolated responsive iframe sandbox (Desktop / Tablet / Mobile).
+  - Sandbox pengujian permintaan (*Try It Out*) dengan injeksi otomatis token proteksi CSRF untuk method `POST`, `PUT`, `PATCH`, dan `DELETE`.
+  - Endpoint spesifikasi standar **OpenAPI 3.0.3** otomatis di `/api-studio/openapi.json`.
+  - Antarmuka visual berestetika tinggi (Dark OLED, Doppelrand double-bezel, tipografi tajam, zero AI-slop) berlandaskan panduan `/frontend-design` & `/design-taste-frontend`.
+
 ## [1.0.6] - 2026-10-30
 
 ### Ditambahkan

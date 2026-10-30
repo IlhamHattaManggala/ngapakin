@@ -1,5 +1,6 @@
 # MySQL Database Driver for Larapak (Optional Dependency)
 
+import importlib
 from .driver import DatabaseDriver
 
 class MySQLDriver(DatabaseDriver):
@@ -14,8 +15,8 @@ class MySQLDriver(DatabaseDriver):
 
     def _get_driver_module(self):
         try:
-            import pymysql
-            import pymysql.cursors
+            pymysql = importlib.import_module("pymysql")
+            importlib.import_module("pymysql.cursors")
             return pymysql
         except ImportError:
             raise ImportError(

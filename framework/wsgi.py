@@ -131,7 +131,8 @@ class LarapakWSGI:
         session = Session(session_id)
         session.start()
         req.session = session
-        self.router.vm.globals["sesi"] = session
+        if self.router and hasattr(self.router, "vm") and self.router.vm and hasattr(self.router.vm, "globals"):
+            self.router.vm.globals["sesi"] = session
 
         # Ensure CSRF token is available
         CSRF.token(session)
@@ -145,6 +146,25 @@ class LarapakWSGI:
             response_headers = [("Content-Type", "text/html; charset=utf-8")]
             start_response(status, response_headers)
             return [f"<h1>403 Forbidden</h1><p>{str(e)}</p>".encode("utf-8")]
+
+        # 8.5 Check Larapak Route & API Studio
+        from framework.studio import is_studio_enabled, render_studio_html, generate_openapi_spec
+        norm_path = path.rstrip("/")
+        if is_studio_enabled() and (norm_path in ("/api-studio", "/api/studio") or path in ("/api-studio/openapi.json", "/api/studio/openapi.json")):
+            session.save()
+            if path.endswith("openapi.json"):
+                import json
+                spec = generate_openapi_spec(self.router)
+                status = "200 OK"
+                response_headers = [("Content-Type", "application/json; charset=utf-8")]
+                start_response(status, response_headers)
+                return [json.dumps(spec, indent=2).encode("utf-8")]
+            else:
+                html = render_studio_html(self.router, session)
+                status = "200 OK"
+                response_headers = [("Content-Type", "text/html; charset=utf-8")]
+                start_response(status, response_headers)
+                return [html.encode("utf-8")]
 
         # 9. Match Route
         route, params = self.router.match(req.method, path)
@@ -212,7 +232,9 @@ class LarapakWSGI:
             start_response(status, response_headers)
             import traceback
             traceback.print_exc()
-            return [f"<h1>500 Internal Server Error</h1><p>{str(e)}</p>".encode("utf-8")]
+            from framework.error_handler import render_exception
+            err_html = render_exception(e, req)
+            return [err_html.encode("utf-8")]
 
         finally:
             # Request cleanup: cleanup files, reset/close thread connections

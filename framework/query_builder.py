@@ -8,6 +8,7 @@ class QueryBuilder:
         self._table = table
         self._wheres = []
         self._limit = None
+        self._offset = None
         self._order_by = None
 
     def tabel(self, table_name):
@@ -51,6 +52,13 @@ class QueryBuilder:
     def order_by(self, kolom, arah="ASC"):
         return self.urut_karo(kolom, arah)
 
+    def lewati(self, jumlah):
+        self._offset = jumlah
+        return self
+
+    def offset(self, jumlah):
+        return self.lewati(jumlah)
+
     def _build_select(self):
         ph = db_manager.placeholder
         quoted_table = db_manager.quote_identifier(self._table)
@@ -83,6 +91,9 @@ class QueryBuilder:
 
         if self._limit is not None:
             sql += f" LIMIT {int(self._limit)}"
+
+        if self._offset is not None:
+            sql += f" OFFSET {int(self._offset)}"
 
         return sql, params
 
@@ -129,6 +140,30 @@ class QueryBuilder:
         cursor = db_manager.execute(sql, params)
         row = cursor.fetchone()
         return row["count"] if row else 0
+
+    def kaca(self, saben_kaca=15, kaca_saiki=1):
+        """Paginate results into a structured dictionary with full pagination metadata."""
+        saben_kaca = max(1, int(saben_kaca or 15))
+        kaca_saiki = max(1, int(kaca_saiki or 1))
+
+        total = self.count()
+        kaca_pungkasan = max(1, (total + saben_kaca - 1) // saben_kaca)
+
+        self.ambil(saben_kaca).lewati((kaca_saiki - 1) * saben_kaca)
+        data = self.kabeh()
+
+        return {
+            "data": data,
+            "total": total,
+            "saben_kaca": saben_kaca,
+            "kaca_saiki": kaca_saiki,
+            "kaca_pungkasan": kaca_pungkasan,
+            "ana_sadurunge": kaca_saiki > 1,
+            "ana_sabanjure": kaca_saiki < kaca_pungkasan,
+        }
+
+    def paginate(self, per_page=15, page=1):
+        return self.kaca(per_page, page)
 
     def tambah(self, data):
         ph = db_manager.placeholder

@@ -43,12 +43,16 @@ class Response:
         engine = TemplateEngine(views_path, Response.active_vm)
         
         html_content = engine.render(name, context)
+        self.headers["X-Larapak-View"] = str(name)
+        if isinstance(context, dict):
+            self.headers["X-Larapak-Context-Keys"] = ",".join(str(k) for k in context.keys())
         return self.html(html_content)
 
     def json(self, data, status=200):
         self.content = json.dumps(data)
         self.status = status
         self.headers["Content-Type"] = "application/json"
+        self.headers["X-Larapak-Type"] = "json"
         return self
 
     def redirect(self, url, status=302):

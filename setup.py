@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ngapakin",
-    version="1.0.6",
+    version="1.0.7",
     description="Bahasa pemrograman berekstensi .ngpk dengan dialek Ngapak/Banyumasan & Larapak MVC Web Framework.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -26,10 +26,11 @@ setup(
     extras_require={
         "mysql": ["pymysql>=1.0.0"],
         "postgres": ["psycopg2-binary>=2.9.0"],
+        "mssql": ["pymssql>=2.2.0"],
         "redis": ["redis>=4.5.0"],
         "security": ["argon2-cffi>=21.3.0"],
         "production": ["gunicorn>=20.1.0"],
-        "all": ["pymysql>=1.0.0", "psycopg2-binary>=2.9.0", "redis>=4.5.0", "argon2-cffi>=21.3.0"],
+        "all": ["pymysql>=1.0.0", "psycopg2-binary>=2.9.0", "pymssql>=2.2.0", "redis>=4.5.0", "argon2-cffi>=21.3.0"],
     },
     entry_points={
         "console_scripts": [

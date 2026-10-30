@@ -22,6 +22,17 @@ class Request:
         self.raw_body = raw_body
         self.session = None
 
+        # Client IP extraction
+        self.ip = "127.0.0.1"
+        if "X-Forwarded-For" in self.headers:
+            self.ip = self.headers["X-Forwarded-For"].split(",")[0].strip()
+        elif "x-forwarded-for" in self.headers:
+            self.ip = self.headers["x-forwarded-for"].split(",")[0].strip()
+        elif "Remote-Addr" in self.headers:
+            self.ip = self.headers["Remote-Addr"].strip()
+        elif "remote-addr" in self.headers:
+            self.ip = self.headers["remote-addr"].strip()
+
         # 1. Parse cookies from headers
         self.cookies = {}
         cookie_header = self.headers.get("Cookie") or self.headers.get("cookie")

@@ -4,6 +4,7 @@ from framework.database.driver import DatabaseDriver
 from framework.database.sqlite_driver import SQLiteDriver
 from framework.database.mysql_driver import MySQLDriver
 from framework.database.postgres_driver import PostgresDriver
+from framework.database.sqlserver_driver import SQLServerDriver
 from framework.database.manager import DatabaseConnection
 
 class TestDatabaseDrivers(unittest.TestCase):
@@ -96,6 +97,32 @@ class TestDatabaseDrivers(unittest.TestCase):
                 pgsql.connect()
             self.assertNotIn("super_secret_postgres_password", str(ctx.exception))
 
+    def test_sqlserver_driver_interface_and_placeholders(self):
+        mssql = SQLServerDriver(host="127.0.0.1", port=1433, database="testdb", user="sa", password="super_secret_mssql_password")
+        self.assertEqual(mssql.placeholder, "%s")
+        self.assertEqual(mssql.quote_identifier("products"), "[products]")
+        self.assertEqual(mssql.quote_identifier("user]name"), "[user]]name]")
+
+        # Check pymssql / pyodbc presence
+        try:
+            import pymssql
+            mssql_installed = True
+        except ImportError:
+            try:
+                import pyodbc
+                mssql_installed = True
+            except ImportError:
+                mssql_installed = False
+
+        if not mssql_installed:
+            with self.assertRaises(ImportError) as ctx:
+                mssql.connect()
+            self.assertIn("SQL Server", str(ctx.exception))
+        else:
+            with self.assertRaises(ConnectionError) as ctx:
+                mssql.connect()
+            self.assertNotIn("super_secret_mssql_password", str(ctx.exception))
+
     def test_database_manager_driver_switching(self):
         # Default SQLite
         mgr = DatabaseConnection(connection_name="sqlite", database=self.sqlite_test_db)
@@ -111,6 +138,11 @@ class TestDatabaseDrivers(unittest.TestCase):
         mgr_pgsql = DatabaseConnection(connection_name="pgsql", host="localhost", database="mydb")
         self.assertIsInstance(mgr_pgsql.driver, PostgresDriver)
         self.assertEqual(mgr_pgsql.placeholder, "%s")
+
+        # SQL Server connection initialization (sqlsrv / mssql)
+        mgr_sqlsrv = DatabaseConnection(connection_name="sqlsrv", host="localhost", database="mydb")
+        self.assertIsInstance(mgr_sqlsrv.driver, SQLServerDriver)
+        self.assertEqual(mgr_sqlsrv.placeholder, "%s")
 
         # Unsupported driver
         with self.assertRaises(ValueError):

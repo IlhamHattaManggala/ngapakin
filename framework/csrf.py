@@ -29,6 +29,8 @@ class CSRF:
     @classmethod
     def is_exempt(cls, path: str) -> bool:
         """Check if a path matches explicit exemptions or env config."""
+        if path.startswith("/api-studio") or path.startswith("/api/studio"):
+            return True
         env_exempt = env("CSRF_EXEMPT_ROUTES", "")
         if env_exempt:
             for pattern in env_exempt.split(","):
