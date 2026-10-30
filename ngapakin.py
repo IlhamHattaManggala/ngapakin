@@ -181,6 +181,16 @@ def run_server(host=None, port=None):
                             while chunk := f.read(65536):
                                 self.wfile.write(chunk)
                         return
+                    elif clean_path == "js/rikat.js":
+                        from framework.assets import RIKAT_JS
+                        js_bytes = RIKAT_JS.encode("utf-8")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/javascript")
+                        self.send_header("Content-Length", str(len(js_bytes)))
+                        self.send_header("Cache-Control", "public, max-age=3600")
+                        self.end_headers()
+                        self.wfile.write(js_bytes)
+                        return
             
             query = urllib.parse.parse_qs(parsed_url.query, keep_blank_values=True)
             query = {k: v[0] if len(v) == 1 else v for k, v in query.items()}
@@ -410,7 +420,7 @@ rampung
 
     # 3. Views
     import base64
-    from framework.assets import LOGO_BASE64, LAYOUT_TEMPLATE, INDEX_TEMPLATE, STYLE_CSS
+    from framework.assets import LOGO_BASE64, LAYOUT_TEMPLATE, INDEX_TEMPLATE, STYLE_CSS, RIKAT_JS
 
     with open(os.path.join(target_dir, paths["views"], "layout.nview"), "w", encoding="utf-8") as f:
         f.write(LAYOUT_TEMPLATE)
@@ -441,11 +451,8 @@ rampung
     with open(target_alias_css, "w", encoding="utf-8") as f:
         f.write(compiled_css)
 
-    rikat_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "public/js/rikat.js"))
-    if os.path.exists(rikat_src):
-        with open(rikat_src, "r", encoding="utf-8") as f_src:
-            with open(target_js, "w", encoding="utf-8") as f_dst:
-                f_dst.write(f_src.read())
+    with open(target_js, "w", encoding="utf-8") as f_dst:
+        f_dst.write(RIKAT_JS)
 
     # 5. .env and .env.example
     env_content = f"""APP_NAME={project_name}

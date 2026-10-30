@@ -95,6 +95,17 @@ class LarapakWSGI:
                     start_response(status, response_headers)
                     with open(candidate_path, "rb") as f:
                         return [f.read()]
+                elif clean_path == "js/rikat.js":
+                    from framework.assets import RIKAT_JS
+                    js_bytes = RIKAT_JS.encode("utf-8")
+                    status = "200 OK"
+                    response_headers = [
+                        ("Content-Type", "application/javascript"),
+                        ("Content-Length", str(len(js_bytes))),
+                        ("Cache-Control", "public, max-age=3600")
+                    ]
+                    start_response(status, response_headers)
+                    return [js_bytes]
 
         # 4. Read body
         raw_body = b""
