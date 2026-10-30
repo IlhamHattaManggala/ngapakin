@@ -60,7 +60,19 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
 
 ## Instalasi dan Memulai Cepat
 
-### Metode 1: Menggunakan pip (Rekomendasi)
+### Metode 1: Standalone Windows Binary (Tanpa Butuh Python)
+Bagi pengguna Windows yang tidak ingin menginstal Python, Anda dapat mengunduh file biner mandiri `ngapakin.exe` langsung:
+
+👉 **[Unduh ngapakin.exe (v1.0.9)](https://github.com/IlhamHattaManggala/ngapakin/releases/latest/download/ngapakin.exe)**
+
+Setelah mengunduh, cukup letakkan file `ngapakin.exe` di folder kerja Anda atau daftarkan ke PATH, lalu jalankan di terminal:
+```bash
+ngapakin new nama-proyek
+cd nama-proyek
+ngapakin serve 8000
+```
+
+### Metode 2: Menggunakan pip (Ekosistem Python)
 Anda dapat menginstal NgapakIn langsung dari PyPI:
 
 ```bash
@@ -80,7 +92,18 @@ ngapakin serve 8000
 
 Buka peramban di `http://localhost:8000`.
 
-### Metode 2: Kloning Repositori Sumber
+### Metode 3: Menggunakan Docker
+Jika Anda menyukai container atau ingin menjalankannya di VPS:
+```bash
+# Menjalankan container dengan folder saat ini
+docker run -d -p 8000:8000 -v $(pwd):/app ilhamhatta/larapak:latest
+```
+Atau jika proyek sudah dibuat via `ngapakin new`, cukup jalankan:
+```bash
+docker compose up -d
+```
+
+### Metode 4: Kloning Repositori Sumber
 
 ```bash
 git clone https://github.com/IlhamHattaManggala/ngapakin.git

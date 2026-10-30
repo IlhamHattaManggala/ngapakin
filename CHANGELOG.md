@@ -2,6 +2,21 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.0.9] - 2026-10-31
+
+### Ditambahkan
+- **Distribusi Standalone Binary Windows (`ngapakin.exe`)**:
+  - Eksekutabel tunggal (.exe) mandiri (12.4 MB) yang mengemas seluruh runtime, virtual machine, compiler, framework MVC, template engine, dan Rikat CSS compiler.
+  - Pengguna Windows dapat langsung menggunakan NgapakIn & Larapak tanpa perlu menginstal Python di komputernya.
+  - Tersedia langsung untuk diunduh di tab GitHub Releases.
+- **Dukungan Containerization & Docker Resmi**:
+  - Berkas `Dockerfile` dan `.dockerignore` resmi berbasis `python:3.11-slim` dengan multi-purpose entrypoint `ngapakin`.
+  - Image resmi Docker Hub: `ilhamhatta/larapak:latest` dan `ilhamhatta/larapak:1.0.9`.
+  - Scaffolding proyek baru (`ngapakin new`) otomatis menyertakan konfigurasi `docker-compose.yml` siap pakai.
+  - Dokumentasi `README.md` pada proyek baru otomatis menyertakan panduan eksekusi lokal dan via Docker Compose.
+- **Otomatisasi Rilis GitHub Actions**:
+  - Workflow `publish.yml` kini mengompilasi `ngapakin.exe` di mesin Windows secara otomatis dan melampirkannya langsung sebagai aset unduhan di GitHub Releases setiap kali tag `v*` dirilis.
+
 ## [1.0.8] - 2026-10-30
 
 ### Ditambahkan

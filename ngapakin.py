@@ -471,7 +471,27 @@ DB_DEBUG=salah
     with open(os.path.join(target_dir, ".env.example"), "w", encoding="utf-8") as f:
         f.write(env_content)
 
-    # 6. README.md
+    # 6. docker-compose.yml
+    docker_compose_content = f"""services:
+  app:
+    image: ilhamhatta/larapak:latest
+    container_name: {project_name}-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=bener
+      - APP_PORT=8000
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=database.sqlite
+"""
+    with open(os.path.join(target_dir, "docker-compose.yml"), "w", encoding="utf-8") as f:
+        f.write(docker_compose_content)
+
+    # 7. README.md
     if lang == "ngapak":
         readme_desc = "Proyek aplikasi web Larapak sing digawe nganggo struktur dialek Ngapak."
         step_text = "Langkah sabanjure:"
@@ -487,6 +507,8 @@ DB_DEBUG=salah
 {readme_desc}
 
 ## Cara Menjalankan
+
+### Opsi 1: Menggunakan CLI Lokal
 1. Masuk ke direktori proyek:
    ```bash
    cd {project_name}
@@ -496,6 +518,13 @@ DB_DEBUG=salah
    ngapakin serve 8000
    ```
 3. Buka peramban di `http://localhost:8000`.
+
+### Opsi 2: Menggunakan Docker (Tanpa Install Python)
+1. Jalankan container:
+   ```bash
+   docker compose up -d
+   ```
+2. Buka peramban di `http://localhost:8000`.
 """
     with open(os.path.join(target_dir, "README.md"), "w", encoding="utf-8") as f:
         f.write(readme_content)
