@@ -2,14 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name="ngapakin",
-    version="1.0.7",
+    version="1.0.8",
     description="Bahasa pemrograman berekstensi .ngpk dengan dialek Ngapak/Banyumasan & Larapak MVC Web Framework.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="Ilham Hatta Manggala",
     author_email="ilhamhattamanggala123@gmail.com",
-    url="https://ilhamhattamanggala.my.id",
+    url="https://larapak.my.id",
     project_urls={
+        "Documentation": "https://larapak.my.id",
         "Author Portfolio": "https://ilhamhattamanggala.my.id",
         "Source Code": "https://github.com/IlhamHattaManggala/ngapakin",
         "Bug Tracker": "https://github.com/IlhamHattaManggala/ngapakin/issues",

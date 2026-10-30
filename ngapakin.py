@@ -26,6 +26,8 @@ def print_usage():
     print("  python ngapakin.py cache:clear")
     print("  python ngapakin.py new <NamaProject> [--bahasa=ngapak|indonesia|english]")
     print("  python ngapakin.py package:install <nama-package>")
+    print("  python ngapakin.py css:build")
+    print("  python ngapakin.py css:watch")
     print("  python ngapakin.py repl")
     print("  python ngapakin.py test")
 
@@ -427,6 +429,23 @@ rampung
 
     with open(os.path.join(target_dir, paths["public_css"], "style.css"), "w", encoding="utf-8") as f:
         f.write(STYLE_CSS)
+
+    # 4b. Rikat CSS & Rikat UI (Zero-dependency Tailwind & PrimeNG alternative)
+    from framework.css_engine import compile_rikat_css
+    target_views = os.path.join(target_dir, paths["views"])
+    target_css = os.path.join(target_dir, paths["public_css"], "rikat.css")
+    target_alias_css = os.path.join(target_dir, paths["public_css"], "larapak.css")
+    target_js = os.path.join(target_dir, paths["public_js"], "rikat.js")
+
+    compiled_css = compile_rikat_css(views_dir=target_views, output_file=target_css)
+    with open(target_alias_css, "w", encoding="utf-8") as f:
+        f.write(compiled_css)
+
+    rikat_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "public/js/rikat.js"))
+    if os.path.exists(rikat_src):
+        with open(rikat_src, "r", encoding="utf-8") as f_src:
+            with open(target_js, "w", encoding="utf-8") as f_dst:
+                f_dst.write(f_src.read())
 
     # 5. .env and .env.example
     env_content = f"""APP_NAME={project_name}
@@ -931,6 +950,52 @@ rampung
         from framework.package_manager import PackageManager
         pm = PackageManager()
         pm.install_package(name)
+
+    elif command in ("css:build", "rikat:build"):
+        from framework.css_engine import compile_rikat_css
+        print("Membangun aset Rikat CSS (Tailwind & PrimeNG alternative)...")
+        views_dir = os.path.abspath("resources/views")
+        out_css = os.path.abspath("public/css/rikat.css")
+        out_alias = os.path.abspath("public/css/larapak.css")
+        content = compile_rikat_css(views_dir=views_dir, output_file=out_css)
+        with open(out_alias, "w", encoding="utf-8") as f:
+            f.write(content)
+        size_kb = len(content.encode("utf-8")) / 1024
+        print(f"Sukses! Rikat CSS terkompilasi ke '{out_css}' ({size_kb:.1f} KB)")
+        print(f"Alias kompatibilitas dibuat di '{out_alias}'")
+
+    elif command in ("css:watch", "rikat:watch"):
+        from framework.css_engine import compile_rikat_css
+        import time
+        views_dir = os.path.abspath("resources/views")
+        out_css = os.path.abspath("public/css/rikat.css")
+        out_alias = os.path.abspath("public/css/larapak.css")
+        print("Rikat CSS Watcher aktif (Tekan Ctrl+C untuk berhenti)...")
+        print(f"Memantau perubahan di: {views_dir}")
+        last_mtime = 0
+        def get_max_mtime(d):
+            m = 0
+            if os.path.exists(d):
+                for root, _, files in os.walk(d):
+                    for f in files:
+                        p = os.path.join(root, f)
+                        try:
+                            m = max(m, os.path.getmtime(p))
+                        except Exception:
+                            pass
+            return m
+        try:
+            while True:
+                current_mtime = get_max_mtime(views_dir)
+                if current_mtime > last_mtime:
+                    last_mtime = current_mtime
+                    content = compile_rikat_css(views_dir=views_dir, output_file=out_css)
+                    with open(out_alias, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    print(f"[{time.strftime('%H:%M:%S')}] Rikat CSS terkompilasi ({len(content.encode('utf-8')) / 1024:.1f} KB)")
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nRikat CSS Watcher dihentikan.")
 
     elif command == "repl":
         print("=== NgapakIn REPL Terminal (Larapak MVC Framework) ===")

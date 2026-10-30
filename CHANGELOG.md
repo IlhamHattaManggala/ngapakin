@@ -2,6 +2,27 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.0.8] - 2026-10-30
+
+### Ditambahkan
+- **In-House Utility CSS Engine (Rikat CSS & Larapak CSS)**:
+  - Framework CSS Utility-First mandiri asli buatan ekosistem Larapak tanpa ketergantungan Node.js, npm, maupun CDN eksternal.
+  - Skala utilitas kompatibel Tailwind: flexbox, CSS Grid 12 kolom, spacing 4px (`p-*`, `m-*`), sizing (`w-*`, `h-*`), tipografi, border, dan elevasi bayangan.
+  - Mesin JIT Arbitrary Parser cerdas: mendukung nilai arbitrer seperti `w-[320px]`, `max-w-[960px]`, `h-[480px]`, `bg-[#f58220]`, `text-[20px]`, `p-[16px]`, `m-[24px]`, `gap-[12px]`, `rounded-[10px]`, `z-[99]`.
+  - Dukungan varian hover (`hover:*`) dan media query responsif (`sm:`, `md:`, `lg:`, `xl:`).
+  - Smart Components berestetika tinggi: `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-outline`, `.card`, `.input`, `.table`, `.badge`, `.alert`.
+  - Integrasi perintah CLI resmi: `ngapakin css:build` untuk kompilasi dan `ngapakin css:watch` untuk file watcher otomatis.
+- **In-House Enterprise Component & Reactive Engine (Rikat UI)**:
+  - Mesin komponen web reaktif murni (14.7 KB, zero dependencies) dengan sintaksis deklaratif ala PrimeNG / Angular.
+  - Two-Way Data Binding: `[(model)]="key"` pada form input, checkbox, textarea.
+  - Property Binding: `[disabled]="expr"`, `[visible]="expr"`, `[text]="expr"`.
+  - Event Binding: `(click)="action"`, `(input)="action"`, `(onSelect)="action"`.
+  - Text Interpolation: `{{ key }}` pada elemen HTML apapun.
+  - Enterprise Web Components: `<l-dialog>` (modal dialog dengan backdrop blur dan header/footer), `<l-table>` (tabel data enterprise dengan live search filter, sorting dinamis, paginator otomatis), serta sistem toast `Rikat.toast()`.
+- **Identitas Visual Wayang Gunungan & Dokumentasi Resmi**:
+  - Artwork Wayang Gunungan khas Banyumasan dan awan Mega Mendung pada hero welcome page.
+  - Pengalihan tombol dan stepper dokumentasi resmi ke portal `https://larapak.my.id`.
+
 ## [1.0.7] - 2026-10-30
 
 ### Ditambahkan

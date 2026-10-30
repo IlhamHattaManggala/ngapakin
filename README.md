@@ -51,6 +51,10 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
    - **REPL Terminal**: Terminal interaktif via `ngapakin repl`.
    - **Step Debugger**: Breakpoint debugger interaktif (`s` step, `c` continue, `l` locals, `g` globals).
    - **VSCode Support dan LSP**: Syntax highlighting TextMate dan diagnostik LSP syntax errors.
+5. **In-House Frontend Engine (Rikat CSS & Rikat UI)**:
+   - **Rikat CSS (Alternatif Tailwind In-House)**: Zero Node.js / Zero CDN, skala utilitas 4px, 12-kolom Grid, flexbox, JIT Arbitrary Parser (`w-[320px]`, `bg-[#f58220]`), varian hover (`hover:*`), media query responsif (`sm:`, `md:`, `lg:`, `xl:`), dan smart components (`.btn`, `.card`, `.input`, `.table`, `.badge`, `.alert`).
+   - **Rikat UI (Alternatif PrimeNG In-House)**: Mesin reaktif native (14.7 KB, zero dependencies) dengan two-way binding `[(model)]`, property binding `[disabled]`, event binding `(click)`, text interpolation `{{ }}`, serta komponen enterprise `<l-dialog>`, `<l-table>` (live search, sort, paginator), dan `Rikat.toast()`.
+   - **CLI Kompilasi**: `python ngapakin.py css:build` dan `python ngapakin.py css:watch`.
 
 ---
 

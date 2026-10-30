@@ -23,7 +23,7 @@ def is_studio_enabled() -> bool:
     return str(debug_conf).lower() in ("bener", "true", "1", "on")
 
 
-def generate_openapi_spec(router, app_name="Larapak Application", version="1.0.7") -> dict:
+def generate_openapi_spec(router, app_name="Larapak Application", version="1.0.8") -> dict:
     """Generate a standard OpenAPI 3.0.3 specification from registered router routes."""
     paths = {}
 
@@ -804,7 +804,7 @@ def render_studio_html(router, session=None, base_url="") -> str:
             <div class="brand-logo">N</div>
             <div class="brand-title">
                 Larapak Route & API Studio
-                <span class="badge badge-version">v1.0.7</span>
+                <span class="badge badge-version">v1.0.8</span>
                 <span class="badge badge-env"><span class="pulse-dot"></span>{app_env}</span>
             </div>
         </div>

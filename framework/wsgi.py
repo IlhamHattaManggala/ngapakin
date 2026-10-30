@@ -41,11 +41,13 @@ class LarapakWSGI:
             if self.router is None:
                 self.router = ngapakin.get_router()
             from framework.paths import get_controllers_path, get_middleware_path
-            self.loader = ngapakin.ControllerLoader(
+            from framework.controller import ControllerLoader
+            from framework.middleware import MiddlewarePipeline
+            self.loader = ControllerLoader(
                 os.path.abspath(get_controllers_path()),
                 self.router.vm
             )
-            self.pipeline = ngapakin.MiddlewarePipeline(
+            self.pipeline = MiddlewarePipeline(
                 os.path.abspath(get_middleware_path()),
                 self.router.vm
             )
