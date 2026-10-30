@@ -2,6 +2,19 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.0.6] - 2026-10-30
+
+### Ditambahkan
+- **Scaffolding Proyek Multi-Bahasa (`ngapakin new`)**:
+  - Penambahan opsi flag `--bahasa=ngapak|indonesia|english` (dan alias `--lang`, `--language`, `-b`).
+  - Pembuatan struktur folder dinamis sesuai dialek/bahasa:
+    - Dialek Ngapak: `jeroan/`, `lumbung/`, `dalan/`, `sawangan/`, `njobo/`.
+    - Bahasa Indonesia: `aplikasi/`, `basisdata/`, `rute/`, `tampilan/`, `publik/`.
+    - English standard: `app/`, `database/`, `routes/`, `resources/views/`, `public/`.
+  - Integrasi deteksi otomatis bahasa proyek pada perintah CLI (`make:*`, `migrate`, `serve`).
+- **Template Welcome Page & Assets**:
+  - Penyematan inline aset base64 logo dan CSS pada template awal agar terisolasi dan anti-rusak saat diinstal via pip.
+
 ## [1.0.0] - 2026-05-28
 
 ### Ditambahkan
