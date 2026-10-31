@@ -87,10 +87,12 @@ class LarapakWSGI:
                     file_size = os.path.getsize(candidate_path)
                     
                     status = "200 OK"
+                    is_debug = os.environ.get("APP_DEBUG", "salah").lower() in ("bener", "true", "1") or os.environ.get("APP_ENV", "local") != "production"
+                    cache_header = "no-cache, must-revalidate" if is_debug else "public, max-age=3600"
                     response_headers = [
                         ("Content-Type", mime_type),
                         ("Content-Length", str(file_size)),
-                        ("Cache-Control", "public, max-age=3600")
+                        ("Cache-Control", cache_header)
                     ]
                     start_response(status, response_headers)
                     with open(candidate_path, "rb") as f:
@@ -99,10 +101,12 @@ class LarapakWSGI:
                     from framework.assets import RIKAT_JS
                     js_bytes = RIKAT_JS.encode("utf-8")
                     status = "200 OK"
+                    is_debug = os.environ.get("APP_DEBUG", "salah").lower() in ("bener", "true", "1") or os.environ.get("APP_ENV", "local") != "production"
+                    cache_header = "no-cache, must-revalidate" if is_debug else "public, max-age=3600"
                     response_headers = [
                         ("Content-Type", "application/javascript"),
                         ("Content-Length", str(len(js_bytes))),
-                        ("Cache-Control", "public, max-age=3600")
+                        ("Cache-Control", cache_header)
                     ]
                     start_response(status, response_headers)
                     return [js_bytes]

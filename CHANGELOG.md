@@ -2,6 +2,37 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.2.0] - 2026-10-31
+
+### Ditambahkan
+- **Ekosistem Komponen Deklaratif Lengkap Rikat UI (34 Web Components)**:
+  - Seluruh komponen enterprise kini menggunakan custom element deklaratif murni ala PrimeNG (<l-*> dan <r-*>) tanpa div berulang.
+  - Komponen Baru & Diperkaya:
+    - **Form & Masukan**: <l-button> (varian filled, outline, ghost, danger, rounded, loading, size), <l-input>, <l-dropdown>, <l-checkbox>, <l-radio>, <l-switch>, <l-slider> (min, max, step), <l-rating> (interaktif bintang presisi), <l-segmented>, <l-otp> (PIN input otomatis fokus & pasting), <l-color-picker> (hex, RGB, preset warna).
+    - **Data & Panel**: <l-card>, <l-table> (sortable, searchable, paginator), <l-dialog> (backdrop blur, animasi transisi halus), <l-toast> (popup notifikasi auto-dismiss), <l-drawer> (offcanvas panel multi-arah), <l-accordion> & <l-accordion-tab>, <l-tooltip>.
+    - **Navigasi & Alur**: <l-pagination>, <l-breadcrumb>, <l-tabs> & <l-tab-panel>, <l-stepper> & <l-step>, <l-timeline> & <l-timeline-event>, <l-tree> & <l-tree-node> (pohon direktori berkas rekursif hierarki).
+    - **Indikator & Media**: <l-badge>, <l-alert>, <l-avatar>, <l-upload> (drag & dropzone berkas), <l-progress>, <l-skeleton> (animasi shimmer glowing), <l-stat> (metrik KPI), <l-empty-state>, <l-divider>, <l-chip>, <l-kbd>.
+- **Suite Koleksi Ikon SVG Modern (86+ Ikon Asli di Rikat.icons)**:
+  - Penambahan ikon feather/lucide komprehensif termasuk ile-text, ile-code, ook-open, 
+efresh-cw, edit, check-square, columns, droplet, maximize, sidebar, more-horizontal, ward, lert-circle, loader, 	rending-up, command, square, share-2.
+- **Komponen Pohon Berkas Cerdas (<l-tree>)**:
+  - Dukungan rekursif multi-kedalaman dengan atribut expanded.
+  - Dukungan atribut href untuk navigasi tautan web dengan auto-deteksi rute aktif (isRouteActive).
+  - Fitur hasActiveDescendant yang otomatis membuka (*auto-expand*) folder induk dari rute yang sedang dibuka pengguna.
+- **Preservasi Posisi Scroll Sidebar Antar-Halaman**:
+  - Integrasi sessionStorage dan event 
+ikat-tree-ready untuk mempertahankan koordinat vertikal scroll sidebar saat navigasi halaman.
+  - Smart viewport alignment yang otomatis menggulir halus menu aktif ke dalam area pandang.
+
+### Diperbaiki
+- **Rendering & Cyclic Width Collapse pada Skeleton Loading**:
+  - Mengatasi perilaku CSS flexbox di mana elemen persentase dalam custom element inline menciut ke 0px.
+  - Penambahan penegasan 	his.style.display dan gradien shimmer berkontras tinggi.
+- **Deteksi Node Pohon pada DOM Manipulation**:
+  - Membaca elemen anak pohon sebelum manipulasi innerHTML untuk mencegah terputusnya referensi parentElement.
+- **Fallback Server Statis WSGI**:
+  - Penambahan rute fallback /js/rikat.js dan /css/rikat.css di ramework/wsgi.py berbasis embedded assets.
+
 ## [1.1.0] - 2026-10-31
 
 ### Ditambahkan

@@ -63,7 +63,7 @@ Larapak adalah MVC Web Framework lengkap yang berjalan di atas virtual machine (
 ### Metode 1: Standalone Windows Binary (Tanpa Butuh Python)
 Bagi pengguna Windows yang tidak ingin menginstal Python, Anda dapat mengunduh file biner mandiri `ngapakin.exe` langsung:
 
-👉 **[Unduh ngapakin.exe (v1.0.9)](https://github.com/IlhamHattaManggala/ngapakin/releases/latest/download/ngapakin.exe)**
+👉 **[Unduh ngapakin.exe (v1.2.0)](https://github.com/IlhamHattaManggala/ngapakin/releases/latest/download/ngapakin.exe)**
 
 Setelah mengunduh, cukup letakkan file `ngapakin.exe` di folder kerja Anda atau daftarkan ke PATH, lalu jalankan di terminal:
 ```bash
