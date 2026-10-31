@@ -2,6 +2,14 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.2.1] - 2026-10-31
+
+### Diperbaiki & Ditingkatkan
+- **Pemulihan Tampilan Logo Utama di PyPI**:
+  - Mengubah path gambar relatif di `README.md` menjadi URL absolut raw GitHub mengarah ke logo utama `favicon.png` (Wayang Gunungan Larapak), sehingga logo tampil sempurna di halaman resmi PyPI maupun GitHub.
+- **Penyempurnaan Metadata Paket**:
+  - Memperbarui dan memperluas deskripsi paket di `setup.py` untuk merefleksikan ekosistem Rikat UI dan dukungan CLI ganda.
+
 ## [1.2.0] - 2026-10-31
 
 ### Ditambahkan

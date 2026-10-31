@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="ngapakin",
-    version="1.2.0",
-    description="Bahasa pemrograman berekstensi .ngpk dengan dialek Ngapak/Banyumasan & Larapak MVC Web Framework.",
+    version="1.2.1",
+    description="Bahasa pemrograman berekstensi .ngpk berbasis dialek Ngapak/Banyumasan serta Larapak MVC Web Framework modern dengan ekosistem Rikat UI & CLI ganda.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="Ilham Hatta Manggala",
