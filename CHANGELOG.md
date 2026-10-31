@@ -2,6 +2,26 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.1.0] - 2026-10-31
+
+### Ditambahkan
+- **Perintah Baris Perintah (CLI) Dialek Ngapak Asli (Dual-Support)**:
+  - Perintah generator / scaffolding: `gawe:pangatur` (make:controller), `gawe:wujud` (make:model), `gawe:migrasi` (make:migration), `gawe:pencegat` (make:middleware), `gawe:gawean` (make:job), dan `gawe:bibit` (make:seeder).
+  - Perintah proyek & server: `anyar` (new), `ladeni` / `urubna` (serve), `dalan:daptar` (route:list), `tulung` (--help).
+  - Perintah database: `migrasi` / `munggah` (migrate), `migrasi:anyar` (migrate:fresh), `migrasi:status` (migrate:status), `mudhun` (rollback), `bibiti` (db:seed).
+  - Perintah frontend & utilitas: `rikat:rakit` (css:build), `rikat:pantau` (css:watch), `coba` (test), `resik:cache` (cache:clear), `paket:pasang` (package:install).
+  - Tetap 100% kompatibel ke belakang (*backward-compatible*) dengan perintah standar Laravel Artisan style.
+- **Generator Seeder Baru (`make:seeder` & `gawe:bibit`)**:
+  - Dukungan pembuatan berkas template database seeder otomatis di direktori bibit aktif (`lumbung/bibit/` atau `database/seeders/`).
+- **Unit Test Komprehensif CLI Aliases**:
+  - Penambahan berkas pengujian `tests/test_cli_aliases.py` (total 129 test suite lulus 100%).
+
+### Diperbaiki
+- **Evaluasi Directives Bertingkat pada Template Engine**:
+  - Perbaikan penghitungan kedalaman blok `nest_depth` pada directive `@section` di `framework/template_engine.py` sehingga directive bertingkat seperti `@nek`, `@baleni`, `@error`, `@kleru` tidak menutup `@section` secara prematur.
+- **Path Resolusi Dinamis Kompilasi CSS**:
+  - Perintah `css:build` dan `css:watch` kini secara dinamis membaca struktur folder proyek berdasarkan dialek bahasa yang aktif (`sawangan/` dan `njobo/css/` pada dialek Ngapak).
+
 ## [1.0.9] - 2026-10-31
 
 ### Ditambahkan

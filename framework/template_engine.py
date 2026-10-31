@@ -91,7 +91,7 @@ class TemplateEngine:
                         nest_depth = 1
                         while i < len(lines):
                             sub_line = lines[i].strip()
-                            if sub_line.startswith("@section"):
+                            if sub_line.startswith("@section") or sub_line.startswith("@nek") or sub_line.startswith("@baleni") or sub_line.startswith("@error") or sub_line.startswith("@kleru"):
                                 nest_depth += 1
                             elif sub_line == "@rampung":
                                 nest_depth -= 1

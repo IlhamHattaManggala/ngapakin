@@ -5,31 +5,87 @@ import os
 import pickle
 from ngapak import Lexer, Parser, Compiler, VM, NgapakError, disassemble_chunk
 
+# Kamus Alias Perintah Dialek Ngapak Asli
+NGAPAK_COMMAND_ALIASES = {
+    # 1. Proyek & Server
+    "anyar": "new",
+    "ladeni": "serve",
+    "urubna": "serve",
+    "mlaku": "serve",
+    "dalan:daptar": "route:list",
+    "daptar:dalan": "route:list",
+    "rute:daptar": "route:list",
+
+    # 2. Generator / Scaffolding (make:*)
+    "gawe:pangatur": "make:controller",
+    "gawe:controller": "make:controller",
+    "gawe:wujud": "make:model",
+    "gawe:model": "make:model",
+    "gawe:migrasi": "make:migration",
+    "gawe:pencegat": "make:middleware",
+    "gawe:middleware": "make:middleware",
+    "gawe:gawean": "make:job",
+    "gawe:job": "make:job",
+    "gawe:bibit": "make:seeder",
+    "gawe:seeder": "make:seeder",
+
+    # 3. Database & Migrasi
+    "migrasi": "migrate",
+    "munggah": "migrate",
+    "migrasi:anyar": "migrate:fresh",
+    "migrasi:resik": "migrate:fresh",
+    "migrasi:status": "migrate:status",
+    "mudhun": "rollback",
+    "migrasi:mundur": "rollback",
+    "bibiti": "db:seed",
+    "lumbung:bibit": "db:seed",
+
+    # 4. Antrean, Cache & Paket
+    "gawean:tandang": "queue:work",
+    "antrean:tandang": "queue:work",
+    "resik:cache": "cache:clear",
+    "resiki:cache": "cache:clear",
+    "paket:pasang": "package:install",
+    "pasang:paket": "package:install",
+
+    # 5. Frontend & Utilitas
+    "rikat:rakit": "css:build",
+    "rikat:bangun": "css:build",
+    "rikat:pantau": "css:watch",
+    "coba": "test",
+    "nyoba": "test",
+}
+
 def print_usage():
-    print("Penggunaan NgapakIn / Larapak CLI:")
-    print("  python ngapakin.py compile <file.ngpk>")
-    print("  python ngapakin.py run <file.ngpk | file.ngpkc>")
-    print("  python ngapakin.py debug <file.ngpk>")
-    print("  python ngapakin.py serve [port]")
-    print("  python ngapakin.py route:list")
-    print("  python ngapakin.py make:controller <NamaController>")
-    print("  python ngapakin.py make:middleware <NamaMiddleware>")
-    print("  python ngapakin.py make:model <NamaModel>")
-    print("  python ngapakin.py make:migration <NamaMigrasi>")
-    print("  python ngapakin.py make:job <NamaJob>")
-    print("  python ngapakin.py migrate")
-    print("  python ngapakin.py migrate:fresh [--seed]")
-    print("  python ngapakin.py migrate:status")
-    print("  python ngapakin.py rollback")
-    print("  python ngapakin.py db:seed")
-    print("  python ngapakin.py queue:work")
-    print("  python ngapakin.py cache:clear")
-    print("  python ngapakin.py new <NamaProject> [--bahasa=ngapak|indonesia|english]")
-    print("  python ngapakin.py package:install <nama-package>")
-    print("  python ngapakin.py css:build")
-    print("  python ngapakin.py css:watch")
-    print("  python ngapakin.py repl")
-    print("  python ngapakin.py test")
+    print("""Penggunaan NgapakIn & Larapak CLI:
+
+Perintah Dialek Ngapak (Asli):
+  ngapakin anyar <NamaProyek> [--bahasa=ngapak|indonesia|english]
+  ngapakin ladeni [port]                         (Urubna server lokal)
+  ngapakin dalan:daptar                          (Daftar kabeh rute HTTP)
+  ngapakin gawe:pangatur <NamaController>        (Gawe controller anyar)
+  ngapakin gawe:wujud <NamaModel>                (Gawe model ORM anyar)
+  ngapakin gawe:migrasi <NamaMigrasi>            (Gawe skema migrasi anyar)
+  ngapakin gawe:pencegat <NamaMiddleware>        (Gawe middleware anyar)
+  ngapakin gawe:gawean <NamaJob>                 (Gawe background queue job)
+  ngapakin gawe:bibit <NamaSeeder>               (Gawe database seeder)
+  ngapakin migrasi                               (Jalankna migrasi database)
+  ngapakin migrasi:anyar [--seed]                (Reset & migrasi anyar)
+  ngapakin migrasi:status                        (Status tabel migrasi)
+  ngapakin mudhun                                (Rollback migrasi)
+  ngapakin bibiti                                (Jalankna database seeder)
+  ngapakin gawean:tandang                        (Jalankna queue worker)
+  ngapakin resik:cache                           (Resiki cache sistem)
+  ngapakin paket:pasang <nama-paket>             (Pasang paket eksternal)
+  ngapakin rikat:rakit                           (Kompilasi Rikat CSS JIT)
+  ngapakin rikat:pantau                          (Pantau perubahan template)
+  ngapakin coba                                  (Jalankna seluruh test suite)
+
+Perintah Standar (Laravel Artisan Style):
+  ngapakin new, serve, route:list, make:controller, make:model, make:migration,
+  make:middleware, make:job, make:seeder, migrate, migrate:fresh, migrate:status,
+  rollback, db:seed, queue:work, cache:clear, package:install, css:build, css:watch, test
+""")
 
 
 def create_vm(router=None):
@@ -535,11 +591,12 @@ DB_DEBUG=salah
     print("  ngapakin serve\n")
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ("--help", "-h", "help", "tulung", "pitulung"):
         print_usage()
-        sys.exit(1)
+        sys.exit(0 if len(sys.argv) >= 2 and sys.argv[1] in ("--help", "-h", "help", "tulung", "pitulung") else 1)
 
-    command = sys.argv[1]
+    raw_command = sys.argv[1]
+    command = NGAPAK_COMMAND_ALIASES.get(raw_command, raw_command)
 
     if command == "new":
         if len(sys.argv) < 3:
@@ -957,6 +1014,34 @@ rampung
             f.write(content)
         print(f"Berhasil membuat berkas job di '{filepath}'")
 
+    elif command == "make:seeder":
+        if len(sys.argv) < 3:
+            print("Error: Diharapkan nama seeder. Contoh: ngapakin gawe:bibit ProdukSeeder")
+            sys.exit(1)
+        name = sys.argv[2]
+        if not name.endswith("Seeder"):
+            name += "Seeder"
+
+        from framework.paths import get_seeders_path
+        seeders_dir = get_seeders_path()
+        os.makedirs(seeders_dir, exist_ok=True)
+        filepath = os.path.join(seeders_dir, f"{name}.ngpk")
+        if os.path.exists(filepath):
+            print(f"Error: Seeder '{name}' sudah ada di '{filepath}'")
+            sys.exit(1)
+
+        content = f"""# Database Seeder {name} untuk Larapak
+# Berkas pengisian data awal database
+
+gawe tandang()
+    # Logika seeder: db.tabel("pengguna").lebokna(...)
+    tulis("Menjalankan seeder {name}...")
+rampung
+"""
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"Berhasil membuat berkas seeder di '{filepath}'")
+
     elif command == "queue:work":
         print("Larapak queue worker aktif (Tekan Ctrl+C untuk berhenti)...")
         vm = create_vm()
@@ -989,10 +1074,13 @@ rampung
 
     elif command in ("css:build", "rikat:build"):
         from framework.css_engine import compile_rikat_css
+        from framework.paths import get_views_path, get_public_path
         print("Membangun aset Rikat CSS (Tailwind & PrimeNG alternative)...")
-        views_dir = os.path.abspath("resources/views")
-        out_css = os.path.abspath("public/css/rikat.css")
-        out_alias = os.path.abspath("public/css/larapak.css")
+        views_dir = os.path.abspath(get_views_path())
+        public_dir = os.path.abspath(get_public_path())
+        out_css = os.path.join(public_dir, "css", "rikat.css")
+        out_alias = os.path.join(public_dir, "css", "larapak.css")
+        os.makedirs(os.path.join(public_dir, "css"), exist_ok=True)
         content = compile_rikat_css(views_dir=views_dir, output_file=out_css)
         with open(out_alias, "w", encoding="utf-8") as f:
             f.write(content)
@@ -1002,10 +1090,13 @@ rampung
 
     elif command in ("css:watch", "rikat:watch"):
         from framework.css_engine import compile_rikat_css
+        from framework.paths import get_views_path, get_public_path
         import time
-        views_dir = os.path.abspath("resources/views")
-        out_css = os.path.abspath("public/css/rikat.css")
-        out_alias = os.path.abspath("public/css/larapak.css")
+        views_dir = os.path.abspath(get_views_path())
+        public_dir = os.path.abspath(get_public_path())
+        out_css = os.path.join(public_dir, "css", "rikat.css")
+        out_alias = os.path.join(public_dir, "css", "larapak.css")
+        os.makedirs(os.path.join(public_dir, "css"), exist_ok=True)
         print("Rikat CSS Watcher aktif (Tekan Ctrl+C untuk berhenti)...")
         print(f"Memantau perubahan di: {views_dir}")
         last_mtime = 0
