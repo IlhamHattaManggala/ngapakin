@@ -55,6 +55,22 @@ class Response:
         self.headers["X-Larapak-Type"] = "json"
         return self
 
+    def xml(self, xml_content, status=200):
+        """Return an XML response with standard application/xml Content-Type."""
+        self.content = xml_content
+        self.status = status
+        self.headers["Content-Type"] = "application/xml; charset=utf-8"
+        self.headers["X-Larapak-Type"] = "xml"
+        return self
+
+    def text(self, text_content, status=200):
+        """Return a plain text response with standard text/plain Content-Type."""
+        self.content = text_content
+        self.status = status
+        self.headers["Content-Type"] = "text/plain; charset=utf-8"
+        self.headers["X-Larapak-Type"] = "text"
+        return self
+
     def redirect(self, url, status=302):
         self.content = f"Redirecting to {url}..."
         self.status = status

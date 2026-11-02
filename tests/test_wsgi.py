@@ -136,6 +136,54 @@ class TestWSGIAdapter(unittest.TestCase):
         self.assertEqual(response_status, "200 OK")
         self.assertIn(b'"updated": "99"', b"".join(body))
 
+    def test_xml_response(self):
+        self.router.get("/sitemap.xml", lambda req, res: res.xml("<urlset></urlset>"))
+        response_status = None
+        response_headers = []
+
+        def start_response(status, headers):
+            nonlocal response_status, response_headers
+            response_status = status
+            response_headers = headers
+
+        environ = {
+            "REQUEST_METHOD": "GET",
+            "PATH_INFO": "/sitemap.xml",
+            "QUERY_STRING": "",
+            "wsgi.input": io.BytesIO(b""),
+            "wsgi.url_scheme": "http"
+        }
+
+        body = self.app(environ, start_response)
+        self.assertEqual(response_status, "200 OK")
+        headers_dict = dict(response_headers)
+        self.assertIn("application/xml", headers_dict.get("Content-Type", ""))
+        self.assertEqual(b"".join(body), b"<urlset></urlset>")
+
+    def test_text_response(self):
+        self.router.get("/robots.txt", lambda req, res: res.text("User-agent: *\nAllow: /"))
+        response_status = None
+        response_headers = []
+
+        def start_response(status, headers):
+            nonlocal response_status, response_headers
+            response_status = status
+            response_headers = headers
+
+        environ = {
+            "REQUEST_METHOD": "GET",
+            "PATH_INFO": "/robots.txt",
+            "QUERY_STRING": "",
+            "wsgi.input": io.BytesIO(b""),
+            "wsgi.url_scheme": "http"
+        }
+
+        body = self.app(environ, start_response)
+        self.assertEqual(response_status, "200 OK")
+        headers_dict = dict(response_headers)
+        self.assertIn("text/plain", headers_dict.get("Content-Type", ""))
+        self.assertIn(b"User-agent: *", b"".join(body))
+
 
 if __name__ == "__main__":
     unittest.main()
