@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ngapakin",
-    version="1.2.1",
+    version="1.2.2",
     description="Bahasa pemrograman berekstensi .ngpk berbasis dialek Ngapak/Banyumasan serta Larapak MVC Web Framework modern dengan ekosistem Rikat UI & CLI ganda.",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

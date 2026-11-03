@@ -23,7 +23,7 @@ def is_studio_enabled() -> bool:
     return str(debug_conf).lower() in ("bener", "true", "1", "on")
 
 
-def generate_openapi_spec(router, app_name="Larapak Application", version="1.0.8") -> dict:
+def generate_openapi_spec(router, app_name="Larapak Application", version="1.2.2") -> dict:
     """Generate a standard OpenAPI 3.0.3 specification from registered router routes."""
     paths = {}
 
@@ -109,6 +109,7 @@ def render_studio_html(router, session=None, base_url="") -> str:
     app_name = env("APP_NAME", "LarapakApp")
     app_env = env("APP_ENV", "local")
     app_debug = env("APP_DEBUG", "bener")
+    framework_version = "1.2.2"
     csrf_token = CSRF.token(session) if session else ""
 
     # Prepare routes data
@@ -554,6 +555,36 @@ def render_studio_html(router, session=None, base_url="") -> str:
             background: #0369a1;
         }}
 
+        .btn-send:disabled {{
+            opacity: 0.65;
+            cursor: not-allowed;
+        }}
+
+        @keyframes studio-spin {{
+            from {{ transform: rotate(0deg); }}
+            to {{ transform: rotate(360deg); }}
+        }}
+
+        .btn-spinner {{
+            animation: studio-spin 0.75s linear infinite;
+            transform-origin: center;
+        }}
+
+        .btn-kbd {{
+            font-size: 10px;
+            opacity: 0.85;
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 4px;
+            font-family: var(--font-mono, monospace);
+            margin-left: 4px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.2;
+            letter-spacing: 0.2px;
+        }}
+
         .route-meta-row {{
             display: flex;
             align-items: center;
@@ -617,6 +648,9 @@ def render_studio_html(router, session=None, base_url="") -> str:
             border: none;
             cursor: pointer;
             transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }}
 
         .tab-btn:hover {{
@@ -756,9 +790,13 @@ def render_studio_html(router, session=None, base_url="") -> str:
             border: 1px solid var(--border-subtle);
             color: var(--text-muted);
             font-size: 11px;
-            padding: 2px 7px;
+            padding: 3px 8px;
             border-radius: 4px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
         }}
 
         .viewport-btn.active {{
@@ -801,10 +839,18 @@ def render_studio_html(router, session=None, base_url="") -> str:
     <!-- Header -->
     <header class="studio-header">
         <div class="brand-cluster">
-            <div class="brand-logo">N</div>
+            <div class="brand-logo" title="Larapak Route & API Studio">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            </div>
             <div class="brand-title">
                 Larapak Route & API Studio
-                <span class="badge badge-version">v1.0.8</span>
+                <span class="badge badge-version">v{framework_version}</span>
                 <span class="badge badge-env"><span class="pulse-dot"></span>{app_env}</span>
             </div>
         </div>
@@ -863,7 +909,7 @@ def render_studio_html(router, session=None, base_url="") -> str:
                     <button class="btn-send" id="btn-send" onclick="sendActiveRequest()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         <span>Kirim Permintaan</span>
-                        <kbd style="font-size:10px; opacity:0.75; padding:2px 5px; background:rgba(255,255,255,0.18); border-radius:3px; font-family:monospace; margin-left:3px;">Ctrl ↵</kbd>
+                        <kbd class="btn-kbd">Ctrl + Enter</kbd>
                     </button>
                 </div>
                 <div class="route-meta-row">
@@ -885,10 +931,22 @@ def render_studio_html(router, session=None, base_url="") -> str:
                 <!-- Request Configuration Tabs -->
                 <div class="request-column">
                     <div class="tab-bar">
-                        <button class="tab-btn active" onclick="setRequestTab('params')">Parameter URL</button>
-                        <button class="tab-btn" onclick="setRequestTab('query')">Query Params</button>
-                        <button class="tab-btn" onclick="setRequestTab('headers')">Headers</button>
-                        <button class="tab-btn" onclick="setRequestTab('body')">Body</button>
+                        <button class="tab-btn active" id="tab-req-params-btn" onclick="setRequestTab('params')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                            <span>Parameter URL</span>
+                        </button>
+                        <button class="tab-btn" id="tab-req-query-btn" onclick="setRequestTab('query')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <span>Query Params</span>
+                        </button>
+                        <button class="tab-btn" id="tab-req-headers-btn" onclick="setRequestTab('headers')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+                            <span>Headers</span>
+                        </button>
+                        <button class="tab-btn" id="tab-req-body-btn" onclick="setRequestTab('body')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="11" y2="17"></line></svg>
+                            <span>Body</span>
+                        </button>
                     </div>
 
                     <!-- Tab: URL Params -->
@@ -955,17 +1013,35 @@ def render_studio_html(router, session=None, base_url="") -> str:
                             <span id="res-time-metric">0 ms</span>
                             <span id="res-size-metric">0 KB</span>
                             <div class="viewport-controls" id="viewport-controls" style="display: none;">
-                                <button class="viewport-btn active" onclick="setViewport('100%')">Desktop</button>
-                                <button class="viewport-btn" onclick="setViewport('768px')">Tablet</button>
-                                <button class="viewport-btn" onclick="setViewport('375px')">Mobile</button>
+                                <button class="viewport-btn active" onclick="setViewport('100%')">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                    <span>Desktop</span>
+                                </button>
+                                <button class="viewport-btn" onclick="setViewport('768px')">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                    <span>Tablet</span>
+                                </button>
+                                <button class="viewport-btn" onclick="setViewport('375px')">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                    <span>Mobile</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="tab-bar">
-                        <button class="tab-btn active" id="tab-res-preview-btn" onclick="setResponseTab('preview')">Pratinjau Tampilan (Live)</button>
-                        <button class="tab-btn" id="tab-res-code-btn" onclick="setResponseTab('code')">Kode Mentah (Raw)</button>
-                        <button class="tab-btn" id="tab-res-headers-btn" onclick="setResponseTab('headers')">Header Respons</button>
+                        <button class="tab-btn active" id="tab-res-preview-btn" onclick="setResponseTab('preview')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <span>Pratinjau Tampilan (Live)</span>
+                        </button>
+                        <button class="tab-btn" id="tab-res-code-btn" onclick="setResponseTab('code')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            <span>Kode Mentah (Raw)</span>
+                        </button>
+                        <button class="tab-btn" id="tab-res-headers-btn" onclick="setResponseTab('headers')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            <span>Header Respons</span>
+                        </button>
                     </div>
 
                     <div class="response-view-container" id="response-container">
@@ -1133,7 +1209,8 @@ def render_studio_html(router, session=None, base_url="") -> str:
                 const tabEl = document.getElementById(`tab-${{t}}`);
                 if (tabEl) tabEl.style.display = (t === tab) ? 'block' : 'none';
             }});
-            event.target.classList.add('active');
+            const activeBtn = document.getElementById(`tab-req-${{tab}}-btn`);
+            if (activeBtn) activeBtn.classList.add('active');
         }}
 
         function setResponseTab(tab) {{
@@ -1214,7 +1291,7 @@ def render_studio_html(router, session=None, base_url="") -> str:
             }}
 
             const btn = document.getElementById('btn-send');
-            btn.innerHTML = '⏳ Memproses...';
+            btn.innerHTML = `<svg class="btn-spinner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.25"></circle><path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor"></path></svg> <span>Memproses...</span>`;
             btn.disabled = true;
 
             const startTime = performance.now();
@@ -1296,7 +1373,7 @@ def render_studio_html(router, session=None, base_url="") -> str:
             }} catch (err) {{
                 alert('Gagal mengirim permintaan: ' + err.message);
             }} finally {{
-                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Kirim Permintaan</span> <kbd style="font-size:10px; opacity:0.75; padding:2px 5px; background:rgba(255,255,255,0.18); border-radius:3px; font-family:monospace; margin-left:3px;">Ctrl ↵</kbd>`;
+                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Kirim Permintaan</span> <kbd class="btn-kbd">Ctrl + Enter</kbd>`;
                 btn.disabled = false;
             }}
         }}

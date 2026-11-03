@@ -2,6 +2,19 @@
 
 Semua perubahan besar pada proyek NgapakIn akan dicatat di dokumen ini.
 
+## [1.2.2] - 2026-11-03
+
+### Diperbaiki & Ditingkatkan
+- **Pembersihan Emoticons & Integrasi SVG Modern pada Route & API Studio**:
+  - Mengganti seluruh emoticon teks (seperti jam pasir dan panah enter) pada antarmuka GUI Studio dengan ikon SVG teknis profesional dan tombol shortcut kbd 'Ctrl + Enter'.
+  - Menambahkan animasi pemrosesan respons berbasis CSS spinner SVG murni (.btn-spinner).
+  - Menambahkan ikon SVG inline pada setiap tab rute (Parameter URL, Query Params, Headers, Body) dan tab respons (Pratinjau Live, Raw Code, Header Respons).
+  - Menambahkan ikon SVG indikator pada switcher viewport (Desktop, Tablet, Mobile).
+  - Memperbarui logo brand studio menjadi lambang network node SVG beresolusi tinggi.
+  - Memperbarui generator spesifikasi OpenAPI 3.0.3 dan badge header ke versi v1.2.2.
+- **Sinkronisasi Versi Framework**:
+  - Memperbarui framework.__version__ menjadi 1.2.2 untuk konsistensi pada error handler dan halaman status layanan.
+
 ## [1.2.1] - 2026-10-31
 
 ### Diperbaiki & Ditingkatkan
